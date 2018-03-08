@@ -1,0 +1,6 @@
+[package]
+name = "binary-heap-plus"
+version = "0.1.0"
+authors = ["SEKINE, Hideki <sekineh@me.com>"]
+
+[dependencies]
