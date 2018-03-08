@@ -1148,7 +1148,7 @@ impl<T: Ord> Extend<T> for BinaryHeap<T> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         // <Self as SpecExtend<I>>::spec_extend(self, iter);
-        self.extend(iter);
+        self.extend_desugared(iter);
     }
 }
 
@@ -1164,18 +1164,18 @@ impl<T: Ord> Extend<T> for BinaryHeap<T> {
 //     }
 // }
 
-// impl<T: Ord> BinaryHeap<T> {
-//     fn extend_desugared<I: IntoIterator<Item = T>>(&mut self, iter: I) {
-//         let iterator = iter.into_iter();
-//         let (lower, _) = iterator.size_hint();
+impl<T: Ord> BinaryHeap<T> {
+    fn extend_desugared<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        let iterator = iter.into_iter();
+        let (lower, _) = iterator.size_hint();
 
-//         self.reserve(lower);
+        self.reserve(lower);
 
-//         for elem in iterator {
-//             self.push(elem);
-//         }
-//     }
-// }
+        for elem in iterator {
+            self.push(elem);
+        }
+    }
+}
 
 // #[stable(feature = "extend_ref", since = "1.2.0")]
 impl<'a, T: 'a + Ord + Copy> Extend<&'a T> for BinaryHeap<T> {
