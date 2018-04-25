@@ -9,6 +9,9 @@
 // except according to those terms.
 
 //! A priority queue implemented with a binary heap.
+//! 
+//! Note: This version is folked from Rust standartd library, which only supports
+//! max heap.
 //!
 //! Insertion and popping the largest element have `O(log n)` time complexity.
 //! Checking the largest element is `O(1)`. Converting a vector to a binary heap
@@ -20,16 +23,16 @@
 //!
 //! This is a larger example that implements [Dijkstra's algorithm][dijkstra]
 //! to solve the [shortest path problem][sssp] on a [directed graph][dir_graph].
-//! It shows how to use [`BinaryHeap`] with custom types.
+//! It shows how to use [`BinaryHeapPlus`] with custom types.
 //!
 //! [dijkstra]: http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 //! [sssp]: http://en.wikipedia.org/wiki/Shortest_path_problem
 //! [dir_graph]: http://en.wikipedia.org/wiki/Directed_graph
-//! [`BinaryHeap`]: struct.BinaryHeap.html
+//! [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 //!
 //! ```
 //! use std::cmp::Ordering;
-//! use std::collections::BinaryHeap;
+//! use binary_heap_plus::*;
 //! use std::usize;
 //!
 //! #[derive(Copy, Clone, Eq, PartialEq)]
@@ -157,6 +160,8 @@
 
 // use core::ops::{Deref, DerefMut, Place, Placer, InPlace};
 // use core::iter::{FromIterator, FusedIterator};
+use std::marker::PhantomData;
+use std::cmp::Ordering;
 use std::slice;
 use std::iter::FromIterator;
 // use std::vec::Drain;
@@ -184,10 +189,10 @@ use core::fmt;
 /// # Examples
 ///
 /// ```
-/// use std::collections::BinaryHeap;
+/// use binary_heap_plus::*;
 ///
 /// // Type inference lets us omit an explicit type signature (which
-/// // would be `BinaryHeap<i32>` in this example).
+/// // would be `BinaryHeapPlus<i32, MaxComparator>` in this example).
 /// let mut heap = BinaryHeap::new();
 ///
 /// // We can use peek to look at the next item in the heap. In this case,
@@ -224,26 +229,57 @@ use core::fmt;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-pub struct BinaryHeap<T> {
+pub struct BinaryHeapPlus<T, C> where C: BuildComparator<T> {
     data: Vec<T>,
+    phantom: PhantomData<C>,
 }
 
+pub type BinaryHeap<T> = BinaryHeapPlus<T, MaxComparator>;
+
+pub trait BuildComparator<T> {
+    fn compare(a: &T, b: &T) -> Ordering;
+}
+
+pub struct MaxComparator;
+
+impl<T> BuildComparator<T> for MaxComparator where T: Ord {
+    fn compare(a: &T, b: &T) -> Ordering {
+        a.cmp(&b)
+    }
+}
+
+pub struct MinComparator;
+
+impl<T> BuildComparator<T> for MinComparator where T: Ord {
+    fn compare(a: &T, b: &T) -> Ordering {
+        b.cmp(&a)
+    }
+}
+
+// pub struct MinComparator<T>;
+
+// impl<T> BuildComparator<T> for MinComparator<T> where T: Ord {
+//     fn compare(a: &T, b: &T) -> Ordering {
+//         b.cmp(&a)
+//     }
+// }
+
 /// Structure wrapping a mutable reference to the greatest item on a
-/// `BinaryHeap`.
+/// `BinaryHeapPlus`.
 ///
-/// This `struct` is created by the [`peek_mut`] method on [`BinaryHeap`]. See
+/// This `struct` is created by the [`peek_mut`] method on [`BinaryHeapPlus`]. See
 /// its documentation for more.
 ///
-/// [`peek_mut`]: struct.BinaryHeap.html#method.peek_mut
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`peek_mut`]: struct.BinaryHeapPlus.html#method.peek_mut
+/// [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-pub struct PeekMut<'a, T: 'a + Ord> {
-    heap: &'a mut BinaryHeap<T>,
+pub struct PeekMut<'a, T: 'a + Ord, C: 'a + BuildComparator<T>> {
+    heap: &'a mut BinaryHeapPlus<T, C>,
     sift: bool,
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: Ord + fmt::Debug> fmt::Debug for PeekMut<'a, T> {
+impl<'a, T: Ord + fmt::Debug, C: BuildComparator<T>> fmt::Debug for PeekMut<'a, T, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("PeekMut")
          .field(&self.heap.data[0])
@@ -252,7 +288,7 @@ impl<'a, T: Ord + fmt::Debug> fmt::Debug for PeekMut<'a, T> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord> Drop for PeekMut<'a, T> {
+impl<'a, T: Ord, C: BuildComparator<T>> Drop for PeekMut<'a, T, C> {
     fn drop(&mut self) {
         if self.sift {
             self.heap.sift_down(0);
@@ -261,7 +297,7 @@ impl<'a, T: Ord> Drop for PeekMut<'a, T> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord> Deref for PeekMut<'a, T> {
+impl<'a, T: Ord, C: BuildComparator<T>> Deref for PeekMut<'a, T, C> {
     type Target = T;
     fn deref(&self) -> &T {
         &self.heap.data[0]
@@ -269,16 +305,16 @@ impl<'a, T: Ord> Deref for PeekMut<'a, T> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord> DerefMut for PeekMut<'a, T> {
+impl<'a, T: Ord, C: BuildComparator<T>> DerefMut for PeekMut<'a, T, C> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.heap.data[0]
     }
 }
 
-impl<'a, T: Ord> PeekMut<'a, T> {
+impl<'a, T: Ord, C: BuildComparator<T>> PeekMut<'a, T, C> {
     /// Removes the peeked value from the heap and returns it.
     // #[stable(feature = "binary_heap_peek_mut_pop", since = "1.18.0")]
-    pub fn pop(mut this: PeekMut<'a, T>) -> T {
+    pub fn pop(mut this: PeekMut<'a, T, C>) -> T {
         let value = this.heap.pop().unwrap();
         this.sift = false;
         value
@@ -286,9 +322,9 @@ impl<'a, T: Ord> PeekMut<'a, T> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone> Clone for BinaryHeap<T> {
+impl<T: Clone, C: BuildComparator<T>> Clone for BinaryHeapPlus<T, C> {
     fn clone(&self) -> Self {
-        BinaryHeap { data: self.data.clone() }
+        BinaryHeapPlus { data: self.data.clone(), phantom: PhantomData }
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -306,32 +342,85 @@ impl<T: Ord> Default for BinaryHeap<T> {
 }
 
 // #[stable(feature = "binaryheap_debug", since = "1.4.0")]
-impl<T: fmt::Debug + Ord> fmt::Debug for BinaryHeap<T> {
+impl<T: fmt::Debug + Ord, C: BuildComparator<T>> fmt::Debug for BinaryHeapPlus<T, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
-impl<T: Ord> BinaryHeap<T> {
-    /// Creates an empty `BinaryHeap` as a max-heap.
+impl<T: Ord> BinaryHeapPlus<T, MaxComparator> {
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::*;
+    /// let mut heap = BinaryHeapPlus::with_max_cmp();
+    /// heap.push(1);
+    /// heap.push(5);
+    /// heap.push(2);
+    /// assert_eq!(heap.peek(), Some(&5));
+    /// ```
+    pub fn with_max_cmp() -> Self {
+        BinaryHeapPlus { 
+            data: vec![],
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: Ord> BinaryHeapPlus<T, MinComparator> {
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::*;
+    /// let mut heap = BinaryHeapPlus::with_min_cmp();
+    /// heap.push(3);
+    /// heap.push(1);
+    /// heap.push(5);
+    /// heap.push(4);
+    /// heap.push(5);
+    /// heap.push(3);
+    /// heap.push(2);
+    /// assert_eq!(heap.pop(), Some(1));
+    /// assert_eq!(heap.pop(), Some(2));
+    /// assert_eq!(heap.pop(), Some(3));
+    /// assert_eq!(heap.pop(), Some(3));
+    /// assert_eq!(heap.pop(), Some(4));
+    /// assert_eq!(heap.pop(), Some(5));
+    /// assert_eq!(heap.pop(), Some(5));
+    /// assert_eq!(heap.pop(), None);
+    /// ```
+    pub fn with_min_cmp() -> BinaryHeapPlus<T, MinComparator> {
+        BinaryHeapPlus { 
+            data: vec![],
+            phantom: PhantomData,
+        }
+    }
+}
+
+impl<T: Ord, C: BuildComparator<T>> BinaryHeapPlus<T, C> {
+    /// Creates an empty `BinaryHeapPlus`. As a special case, `BinaryHeap::new()` will create a max-heap.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// heap.push(4);
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn new() -> BinaryHeap<T> {
-        BinaryHeap { data: vec![] }
+    pub fn new() -> BinaryHeapPlus<T, C> {
+        BinaryHeapPlus { data: vec![], phantom: PhantomData }
     }
 
-    /// Creates an empty `BinaryHeap` with a specific capacity.
+    /// Creates an empty `BinaryHeapPlus` with a specific capacity.
     /// This preallocates enough memory for `capacity` elements,
-    /// so that the `BinaryHeap` does not have to be reallocated
+    /// so that the `BinaryHeapPlus` does not have to be reallocated
     /// until it contains at least that many values.
     ///
     /// # Examples
@@ -339,13 +428,13 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::with_capacity(10);
     /// heap.push(4);
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn with_capacity(capacity: usize) -> BinaryHeap<T> {
-        BinaryHeap { data: Vec::with_capacity(capacity) }
+    pub fn with_capacity(capacity: usize) -> BinaryHeapPlus<T, C> {
+        BinaryHeapPlus { data: Vec::with_capacity(capacity), phantom: PhantomData }
     }
 
     /// Returns an iterator visiting all values in the underlying vector, in
@@ -356,7 +445,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
@@ -376,7 +465,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// assert_eq!(heap.peek(), None);
     ///
@@ -402,7 +491,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// assert!(heap.peek_mut().is_none());
     ///
@@ -416,7 +505,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// assert_eq!(heap.peek(), Some(&2));
     /// ```
     // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-    pub fn peek_mut(&mut self) -> Option<PeekMut<T>> {
+    pub fn peek_mut(&mut self) -> Option<PeekMut<T, C>> {
         if self.is_empty() {
             None
         } else {
@@ -434,7 +523,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::with_capacity(100);
     /// assert!(heap.capacity() >= 100);
     /// heap.push(4);
@@ -445,7 +534,7 @@ impl<T: Ord> BinaryHeap<T> {
     }
 
     /// Reserves the minimum capacity for exactly `additional` more elements to be inserted in the
-    /// given `BinaryHeap`. Does nothing if the capacity is already sufficient.
+    /// given `BinaryHeapPlus`. Does nothing if the capacity is already sufficient.
     ///
     /// Note that the allocator may give the collection more space than it requests. Therefore
     /// capacity can not be relied upon to be precisely minimal. Prefer [`reserve`] if future
@@ -460,7 +549,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve_exact(100);
     /// assert!(heap.capacity() >= 100);
@@ -474,7 +563,7 @@ impl<T: Ord> BinaryHeap<T> {
     }
 
     /// Reserves capacity for at least `additional` more elements to be inserted in the
-    /// `BinaryHeap`. The collection may reserve more space to avoid frequent reallocations.
+    /// `BinaryHeapPlus`. The collection may reserve more space to avoid frequent reallocations.
     ///
     /// # Panics
     ///
@@ -485,7 +574,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve(100);
     /// assert!(heap.capacity() >= 100);
@@ -503,7 +592,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity(100);
     ///
     /// assert!(heap.capacity() >= 100);
@@ -523,7 +612,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert_eq!(heap.pop(), Some(3));
@@ -548,7 +637,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     /// heap.push(3);
     /// heap.push(5);
@@ -564,7 +653,7 @@ impl<T: Ord> BinaryHeap<T> {
         self.sift_up(0, old_len);
     }
 
-    /// Consumes the `BinaryHeap` and returns the underlying vector
+    /// Consumes the `BinaryHeapPlus` and returns the underlying vector
     /// in arbitrary order.
     ///
     /// # Examples
@@ -572,7 +661,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5, 6, 7]);
     /// let vec = heap.into_vec();
     ///
@@ -586,7 +675,7 @@ impl<T: Ord> BinaryHeap<T> {
         self.into()
     }
 
-    /// Consumes the `BinaryHeap` and returns a vector in sorted
+    /// Consumes the `BinaryHeapPlus` and returns a vector in sorted
     /// (ascending) order.
     ///
     /// # Examples
@@ -594,7 +683,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     ///
     /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
     /// heap.push(6);
@@ -629,7 +718,8 @@ impl<T: Ord> BinaryHeap<T> {
 
             while hole.pos() > start {
                 let parent = (hole.pos() - 1) / 2;
-                if hole.element() <= hole.get(parent) {
+                // if hole.element() <= hole.get(parent) {
+                if C::compare(hole.element(), hole.get(parent)) != Ordering::Greater {
                     break;
                 }
                 hole.move_to(parent);
@@ -647,11 +737,13 @@ impl<T: Ord> BinaryHeap<T> {
             while child < end {
                 let right = child + 1;
                 // compare with the greater of the two children
-                if right < end && !(hole.get(child) > hole.get(right)) {
+                // if right < end && !(hole.get(child) > hole.get(right)) {
+                if right < end && C::compare(hole.get(child), hole.get(right)) != Ordering::Greater {
                     child = right;
                 }
                 // if we are already in order, stop.
-                if hole.element() >= hole.get(child) {
+                // if hole.element() >= hole.get(child) {
+                if C::compare(hole.element(), hole.get(child)) != Ordering::Less {
                     break;
                 }
                 hole.move_to(child);
@@ -679,7 +771,8 @@ impl<T: Ord> BinaryHeap<T> {
             while child < end {
                 let right = child + 1;
                 // compare with the greater of the two children
-                if right < end && !(hole.get(child) > hole.get(right)) {
+                // if right < end && !(hole.get(child) > hole.get(right)) {
+                if right < end && C::compare(hole.get(child), hole.get(right)) != Ordering::Greater {
                     child = right;
                 }
                 hole.move_to(child);
@@ -697,7 +790,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert_eq!(heap.len(), 2);
@@ -714,7 +807,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::new();
     ///
     /// assert!(heap.is_empty());
@@ -739,7 +832,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -763,7 +856,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -792,7 +885,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     ///
     /// let v = vec![-10, 1, 2, 3, 3];
     /// let mut a = BinaryHeap::from(v);
@@ -911,13 +1004,13 @@ impl<'a, T> Drop for Hole<'a, T> {
     }
 }
 
-/// An iterator over the elements of a `BinaryHeap`.
+/// An iterator over the elements of a `BinaryHeapPlus`.
 ///
-/// This `struct` is created by the [`iter`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by the [`iter`] method on [`BinaryHeapPlus`]. See its
 /// documentation for more.
 ///
-/// [`iter`]: struct.BinaryHeap.html#method.iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`iter`]: struct.BinaryHeapPlus.html#method.iter
+/// [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 // #[stable(feature = "rust1", since = "1.0.0")]
 pub struct Iter<'a, T: 'a> {
     iter: slice::Iter<'a, T>,
@@ -973,13 +1066,13 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<'a, T> FusedIterator for Iter<'a, T> {}
 
-/// An owning iterator over the elements of a `BinaryHeap`.
+/// An owning iterator over the elements of a `BinaryHeapPlus`.
 ///
-/// This `struct` is created by the [`into_iter`] method on [`BinaryHeap`][`BinaryHeap`]
+/// This `struct` is created by the [`into_iter`] method on [`BinaryHeapPlus`][`BinaryHeapPlus`]
 /// (provided by the `IntoIterator` trait). See its documentation for more.
 ///
-/// [`into_iter`]: struct.BinaryHeap.html#method.into_iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`into_iter`]: struct.BinaryHeapPlus.html#method.into_iter
+/// [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[derive(Clone)]
 pub struct IntoIter<T> {
@@ -1028,13 +1121,13 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<T> FusedIterator for IntoIter<T> {}
 
-/// A draining iterator over the elements of a `BinaryHeap`.
+/// A draining iterator over the elements of a `BinaryHeapPlus`.
 ///
-/// This `struct` is created by the [`drain`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by the [`drain`] method on [`BinaryHeapPlus`]. See its
 /// documentation for more.
 ///
-/// [`drain`]: struct.BinaryHeap.html#method.drain
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`drain`]: struct.BinaryHeapPlus.html#method.drain
+/// [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 // #[stable(feature = "drain", since = "1.6.0")]
 // #[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
@@ -1075,36 +1168,36 @@ impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
 // impl<'a, T: 'a> FusedIterator for Drain<'a, T> {}
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
-    fn from(vec: Vec<T>) -> BinaryHeap<T> {
-        let mut heap = BinaryHeap { data: vec };
+impl<T: Ord, C: BuildComparator<T>> From<Vec<T>> for BinaryHeapPlus<T, C> {
+    fn from(vec: Vec<T>) -> BinaryHeapPlus<T, C> {
+        let mut heap = BinaryHeapPlus { data: vec, phantom: PhantomData };
         heap.rebuild();
         heap
     }
 }
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-// impl<T> From<BinaryHeap<T>> for Vec<T> {
-//     fn from(heap: BinaryHeap<T>) -> Vec<T> {
+// impl<T> From<BinaryHeapPlus<T>> for Vec<T> {
+//     fn from(heap: BinaryHeapPlus<T>) -> Vec<T> {
 //         heap.data
 //     }
 // }
 
-impl<T> Into<Vec<T>> for BinaryHeap<T> {
+impl<T, C: BuildComparator<T>> Into<Vec<T>> for BinaryHeapPlus<T, C> {
     fn into(self) -> Vec<T> {
         self.data
     }
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> FromIterator<T> for BinaryHeap<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> BinaryHeap<T> {
-        BinaryHeap::from(iter.into_iter().collect::<Vec<_>>())
+impl<T: Ord, C: BuildComparator<T>> FromIterator<T> for BinaryHeapPlus<T, C> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> BinaryHeapPlus<T, C> {
+        BinaryHeapPlus::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> IntoIterator for BinaryHeap<T> {
+impl<T: Ord, C: BuildComparator<T>> IntoIterator for BinaryHeapPlus<T, C> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -1117,7 +1210,7 @@ impl<T: Ord> IntoIterator for BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use std::collections::BinaryHeap;
+    /// use binary_heap_plus::*;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
@@ -1132,7 +1225,7 @@ impl<T: Ord> IntoIterator for BinaryHeap<T> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T> IntoIterator for &'a BinaryHeap<T>
+impl<'a, T, C: BuildComparator<T>> IntoIterator for &'a BinaryHeapPlus<T, C>
     where T: Ord
 {
     type Item = &'a T;
@@ -1144,7 +1237,7 @@ impl<'a, T> IntoIterator for &'a BinaryHeap<T>
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> Extend<T> for BinaryHeap<T> {
+impl<T: Ord, C: BuildComparator<T>> Extend<T> for BinaryHeapPlus<T, C> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         // <Self as SpecExtend<I>>::spec_extend(self, iter);
@@ -1152,19 +1245,19 @@ impl<T: Ord> Extend<T> for BinaryHeap<T> {
     }
 }
 
-// impl<T: Ord, I: IntoIterator<Item = T>> SpecExtend<I> for BinaryHeap<T> {
+// impl<T: Ord, I: IntoIterator<Item = T>> SpecExtend<I> for BinaryHeapPlus<T> {
 //     default fn spec_extend(&mut self, iter: I) {
 //         self.extend_desugared(iter.into_iter());
 //     }
 // }
 
-// impl<T: Ord> SpecExtend<BinaryHeap<T>> for BinaryHeap<T> {
-//     fn spec_extend(&mut self, ref mut other: BinaryHeap<T>) {
+// impl<T: Ord> SpecExtend<BinaryHeapPlus<T>> for BinaryHeapPlus<T> {
+//     fn spec_extend(&mut self, ref mut other: BinaryHeapPlus<T>) {
 //         self.append(other);
 //     }
 // }
 
-impl<T: Ord> BinaryHeap<T> {
+impl<T: Ord, C: BuildComparator<T>> BinaryHeapPlus<T, C> {
     fn extend_desugared<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iterator = iter.into_iter();
         let (lower, _) = iterator.size_hint();
@@ -1178,7 +1271,7 @@ impl<T: Ord> BinaryHeap<T> {
 }
 
 // #[stable(feature = "extend_ref", since = "1.2.0")]
-impl<'a, T: 'a + Ord + Copy> Extend<&'a T> for BinaryHeap<T> {
+impl<'a, T: 'a + Ord + Copy, C: BuildComparator<T>> Extend<&'a T> for BinaryHeapPlus<T, C> {
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
@@ -1189,7 +1282,7 @@ impl<'a, T: 'a + Ord + Copy> Extend<&'a T> for BinaryHeap<T> {
 //            issue = "30172")]
 // pub struct BinaryHeapPlace<'a, T: 'a>
 // where T: Clone + Ord {
-//     heap: *mut BinaryHeap<T>,
+//     heap: *mut BinaryHeapPlus<T>,
 //     place: vec::PlaceBack<'a, T>,
 // }
 
@@ -1207,12 +1300,12 @@ impl<'a, T: 'a + Ord + Copy> Extend<&'a T> for BinaryHeap<T> {
 // #[unstable(feature = "collection_placement",
 //            reason = "placement protocol is subject to change",
 //            issue = "30172")]
-// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeap<T>
+// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeapPlus<T>
 // where T: Clone + Ord {
 //     type Place = BinaryHeapPlace<'a, T>;
 
 //     fn make_place(self) -> Self::Place {
-//         let ptr = self as *mut BinaryHeap<T>;
+//         let ptr = self as *mut BinaryHeapPlus<T>;
 //         let place = Placer::make_place(self.data.place_back());
 //         BinaryHeapPlace {
 //             heap: ptr,
@@ -1241,7 +1334,7 @@ impl<'a, T: 'a + Ord + Copy> Extend<&'a T> for BinaryHeap<T> {
 //     unsafe fn finalize(self) -> &'a T {
 //         self.place.finalize();
 
-//         let heap: &mut BinaryHeap<T> = &mut *self.heap;
+//         let heap: &mut BinaryHeapPlus<T> = &mut *self.heap;
 //         let len = heap.len();
 //         let i = heap.sift_up(0, len - 1);
 //         heap.data.get_unchecked(i)

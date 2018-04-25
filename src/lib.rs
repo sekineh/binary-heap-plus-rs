@@ -1,5 +1,5 @@
 mod binary_heap;
-pub use binary_heap::BinaryHeap;
+pub use binary_heap::*;
 extern crate core;
 
 /// An intermediate trait for specialization of `Extend`.
