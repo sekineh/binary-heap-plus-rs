@@ -229,28 +229,28 @@ use core::fmt;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-pub struct BinaryHeapPlus<T, C> where C: BuildComparator<T> {
+pub struct BinaryHeapPlus<T, C> where C: Compare<T> {
     data: Vec<T>,
     phantom: PhantomData<C>,
 }
 
-pub type BinaryHeap<T> = BinaryHeapPlus<T, MaxComparator>;
+pub type BinaryHeap<T> = BinaryHeapPlus<T, CompareDescending>;
 
-pub trait BuildComparator<T> {
+pub trait Compare<T> {
     fn compare(a: &T, b: &T) -> Ordering;
 }
 
-pub struct MaxComparator;
+pub struct CompareDescending;
 
-impl<T> BuildComparator<T> for MaxComparator where T: Ord {
+impl<T> Compare<T> for CompareDescending where T: Ord {
     fn compare(a: &T, b: &T) -> Ordering {
         a.cmp(&b)
     }
 }
 
-pub struct MinComparator;
+pub struct CompareAscending;
 
-impl<T> BuildComparator<T> for MinComparator where T: Ord {
+impl<T> Compare<T> for CompareAscending where T: Ord {
     fn compare(a: &T, b: &T) -> Ordering {
         b.cmp(&a)
     }
@@ -273,13 +273,13 @@ impl<T> BuildComparator<T> for MinComparator where T: Ord {
 /// [`peek_mut`]: struct.BinaryHeapPlus.html#method.peek_mut
 /// [`BinaryHeapPlus`]: struct.BinaryHeapPlus.html
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-pub struct PeekMut<'a, T: 'a + Ord, C: 'a + BuildComparator<T>> {
+pub struct PeekMut<'a, T: 'a + Ord, C: 'a + Compare<T>> {
     heap: &'a mut BinaryHeapPlus<T, C>,
     sift: bool,
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: Ord + fmt::Debug, C: BuildComparator<T>> fmt::Debug for PeekMut<'a, T, C> {
+impl<'a, T: Ord + fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'a, T, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("PeekMut")
          .field(&self.heap.data[0])
@@ -288,7 +288,7 @@ impl<'a, T: Ord + fmt::Debug, C: BuildComparator<T>> fmt::Debug for PeekMut<'a, 
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord, C: BuildComparator<T>> Drop for PeekMut<'a, T, C> {
+impl<'a, T: Ord, C: Compare<T>> Drop for PeekMut<'a, T, C> {
     fn drop(&mut self) {
         if self.sift {
             self.heap.sift_down(0);
@@ -297,7 +297,7 @@ impl<'a, T: Ord, C: BuildComparator<T>> Drop for PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord, C: BuildComparator<T>> Deref for PeekMut<'a, T, C> {
+impl<'a, T: Ord, C: Compare<T>> Deref for PeekMut<'a, T, C> {
     type Target = T;
     fn deref(&self) -> &T {
         &self.heap.data[0]
@@ -305,13 +305,13 @@ impl<'a, T: Ord, C: BuildComparator<T>> Deref for PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T: Ord, C: BuildComparator<T>> DerefMut for PeekMut<'a, T, C> {
+impl<'a, T: Ord, C: Compare<T>> DerefMut for PeekMut<'a, T, C> {
     fn deref_mut(&mut self) -> &mut T {
         &mut self.heap.data[0]
     }
 }
 
-impl<'a, T: Ord, C: BuildComparator<T>> PeekMut<'a, T, C> {
+impl<'a, T: Ord, C: Compare<T>> PeekMut<'a, T, C> {
     /// Removes the peeked value from the heap and returns it.
     // #[stable(feature = "binary_heap_peek_mut_pop", since = "1.18.0")]
     pub fn pop(mut this: PeekMut<'a, T, C>) -> T {
@@ -322,7 +322,7 @@ impl<'a, T: Ord, C: BuildComparator<T>> PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone, C: BuildComparator<T>> Clone for BinaryHeapPlus<T, C> {
+impl<T: Clone, C: Compare<T>> Clone for BinaryHeapPlus<T, C> {
     fn clone(&self) -> Self {
         BinaryHeapPlus { data: self.data.clone(), phantom: PhantomData }
     }
@@ -342,13 +342,13 @@ impl<T: Ord> Default for BinaryHeap<T> {
 }
 
 // #[stable(feature = "binaryheap_debug", since = "1.4.0")]
-impl<T: fmt::Debug + Ord, C: BuildComparator<T>> fmt::Debug for BinaryHeapPlus<T, C> {
+impl<T: fmt::Debug + Ord, C: Compare<T>> fmt::Debug for BinaryHeapPlus<T, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
-impl<T: Ord> BinaryHeapPlus<T, MaxComparator> {
+impl<T: Ord> BinaryHeapPlus<T, CompareDescending> {
     /// # Examples
     ///
     /// Basic usage:
@@ -369,7 +369,7 @@ impl<T: Ord> BinaryHeapPlus<T, MaxComparator> {
     }
 }
 
-impl<T: Ord> BinaryHeapPlus<T, MinComparator> {
+impl<T: Ord> BinaryHeapPlus<T, CompareAscending> {
     /// # Examples
     ///
     /// Basic usage:
@@ -393,7 +393,7 @@ impl<T: Ord> BinaryHeapPlus<T, MinComparator> {
     /// assert_eq!(heap.pop(), Some(5));
     /// assert_eq!(heap.pop(), None);
     /// ```
-    pub fn with_min_cmp() -> BinaryHeapPlus<T, MinComparator> {
+    pub fn with_min_cmp() -> BinaryHeapPlus<T, CompareAscending> {
         BinaryHeapPlus { 
             data: vec![],
             phantom: PhantomData,
@@ -401,7 +401,7 @@ impl<T: Ord> BinaryHeapPlus<T, MinComparator> {
     }
 }
 
-impl<T: Ord, C: BuildComparator<T>> BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> BinaryHeapPlus<T, C> {
     /// Creates an empty `BinaryHeapPlus`. As a special case, `BinaryHeap::new()` will create a max-heap.
     ///
     /// # Examples
@@ -1168,7 +1168,7 @@ impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
 // impl<'a, T: 'a> FusedIterator for Drain<'a, T> {}
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-impl<T: Ord, C: BuildComparator<T>> From<Vec<T>> for BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> From<Vec<T>> for BinaryHeapPlus<T, C> {
     fn from(vec: Vec<T>) -> BinaryHeapPlus<T, C> {
         let mut heap = BinaryHeapPlus { data: vec, phantom: PhantomData };
         heap.rebuild();
@@ -1183,21 +1183,21 @@ impl<T: Ord, C: BuildComparator<T>> From<Vec<T>> for BinaryHeapPlus<T, C> {
 //     }
 // }
 
-impl<T, C: BuildComparator<T>> Into<Vec<T>> for BinaryHeapPlus<T, C> {
+impl<T, C: Compare<T>> Into<Vec<T>> for BinaryHeapPlus<T, C> {
     fn into(self) -> Vec<T> {
         self.data
     }
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord, C: BuildComparator<T>> FromIterator<T> for BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> FromIterator<T> for BinaryHeapPlus<T, C> {
     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> BinaryHeapPlus<T, C> {
         BinaryHeapPlus::from(iter.into_iter().collect::<Vec<_>>())
     }
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord, C: BuildComparator<T>> IntoIterator for BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> IntoIterator for BinaryHeapPlus<T, C> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -1225,7 +1225,7 @@ impl<T: Ord, C: BuildComparator<T>> IntoIterator for BinaryHeapPlus<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T, C: BuildComparator<T>> IntoIterator for &'a BinaryHeapPlus<T, C>
+impl<'a, T, C: Compare<T>> IntoIterator for &'a BinaryHeapPlus<T, C>
     where T: Ord
 {
     type Item = &'a T;
@@ -1237,7 +1237,7 @@ impl<'a, T, C: BuildComparator<T>> IntoIterator for &'a BinaryHeapPlus<T, C>
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord, C: BuildComparator<T>> Extend<T> for BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> Extend<T> for BinaryHeapPlus<T, C> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         // <Self as SpecExtend<I>>::spec_extend(self, iter);
@@ -1257,7 +1257,7 @@ impl<T: Ord, C: BuildComparator<T>> Extend<T> for BinaryHeapPlus<T, C> {
 //     }
 // }
 
-impl<T: Ord, C: BuildComparator<T>> BinaryHeapPlus<T, C> {
+impl<T: Ord, C: Compare<T>> BinaryHeapPlus<T, C> {
     fn extend_desugared<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iterator = iter.into_iter();
         let (lower, _) = iterator.size_hint();
@@ -1271,7 +1271,7 @@ impl<T: Ord, C: BuildComparator<T>> BinaryHeapPlus<T, C> {
 }
 
 // #[stable(feature = "extend_ref", since = "1.2.0")]
-impl<'a, T: 'a + Ord + Copy, C: BuildComparator<T>> Extend<&'a T> for BinaryHeapPlus<T, C> {
+impl<'a, T: 'a + Ord + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeapPlus<T, C> {
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
