@@ -333,11 +333,11 @@ impl<T: Clone, C: Compare<T>> Clone for BinaryHeapPlus<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> Default for BinaryHeap<T> {
+impl<T: Ord, C: Compare<T>> Default for BinaryHeapPlus<T, C> {
     /// Creates an empty `BinaryHeap<T>`.
     #[inline]
-    fn default() -> BinaryHeap<T> {
-        BinaryHeap::new()
+    fn default() -> BinaryHeapPlus<T, C> {
+        BinaryHeapPlus::new()
     }
 }
 
@@ -1251,8 +1251,8 @@ impl<T: Ord, C: Compare<T>> Extend<T> for BinaryHeapPlus<T, C> {
 //     }
 // }
 
-// impl<T: Ord> SpecExtend<BinaryHeapPlus<T>> for BinaryHeapPlus<T> {
-//     fn spec_extend(&mut self, ref mut other: BinaryHeapPlus<T>) {
+// impl<T: Ord> SpecExtend<BinaryHeap<T>> for BinaryHeapPlus<T> {
+//     fn spec_extend(&mut self, ref mut other: BinaryHeap<T>) {
 //         self.append(other);
 //     }
 // }
@@ -1282,7 +1282,7 @@ impl<'a, T: 'a + Ord + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeapPlus<T, 
 //            issue = "30172")]
 // pub struct BinaryHeapPlace<'a, T: 'a>
 // where T: Clone + Ord {
-//     heap: *mut BinaryHeapPlus<T>,
+//     heap: *mut BinaryHeap<T>,
 //     place: vec::PlaceBack<'a, T>,
 // }
 
@@ -1300,12 +1300,12 @@ impl<'a, T: 'a + Ord + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeapPlus<T, 
 // #[unstable(feature = "collection_placement",
 //            reason = "placement protocol is subject to change",
 //            issue = "30172")]
-// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeapPlus<T>
+// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeap<T>
 // where T: Clone + Ord {
 //     type Place = BinaryHeapPlace<'a, T>;
 
 //     fn make_place(self) -> Self::Place {
-//         let ptr = self as *mut BinaryHeapPlus<T>;
+//         let ptr = self as *mut BinaryHeap<T>;
 //         let place = Placer::make_place(self.data.place_back());
 //         BinaryHeapPlace {
 //             heap: ptr,
@@ -1334,7 +1334,7 @@ impl<'a, T: 'a + Ord + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeapPlus<T, 
 //     unsafe fn finalize(self) -> &'a T {
 //         self.place.finalize();
 
-//         let heap: &mut BinaryHeapPlus<T> = &mut *self.heap;
+//         let heap: &mut BinaryHeap<T> = &mut *self.heap;
 //         let len = heap.len();
 //         let i = heap.sift_up(0, len - 1);
 //         heap.data.get_unchecked(i)
