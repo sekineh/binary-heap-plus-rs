@@ -229,40 +229,46 @@ use core::fmt;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-pub struct BinaryHeapPlus<T, C> where C: Compare<T> {
+pub struct BinaryHeapPlus<T, C = MaxComparator> where C: Compare<T> {
     data: Vec<T>,
     phantom: PhantomData<C>,
 }
 
-pub type BinaryHeap<T> = BinaryHeapPlus<T, CompareDescending>;
+/// A max heap.
+pub type BinaryHeapMax<T> = BinaryHeapPlus<T, MaxComparator>;
 
+/// A min heap.
+pub type BinaryHeapMin<T> = BinaryHeapPlus<T, MinComparator>;
+
+/// A backward-compatibility type that can be used as a max heap.
+pub type BinaryHeap<T> = BinaryHeapMax<T>;
+
+/// Simpler replacement for the `Ord` trait.
+/// The difference is that you can define multiple sort orders on a single type `T`.
+/// Unlike `Ord` trait, `Compare<T>` trait can be easily implemented by providing a single function.
 pub trait Compare<T> {
     fn compare(a: &T, b: &T) -> Ordering;
 }
 
-pub struct CompareDescending;
+/// For `T` that implements `Ord`, you can use this struct to quickly
+/// set up a max heap.
+pub struct MaxComparator;
 
-impl<T> Compare<T> for CompareDescending where T: Ord {
+impl<T> Compare<T> for MaxComparator where T: Ord {
     fn compare(a: &T, b: &T) -> Ordering {
         a.cmp(&b)
     }
 }
 
-pub struct CompareAscending;
+/// For `T` that implements `Ord`, you can use this struct to quickly
+/// set up a min heap.
+pub struct MinComparator;
 
-impl<T> Compare<T> for CompareAscending where T: Ord {
+impl<T> Compare<T> for MinComparator where T: Ord {
     fn compare(a: &T, b: &T) -> Ordering {
         b.cmp(&a)
     }
 }
-
-// pub struct MinComparator<T>;
-
-// impl<T> BuildComparator<T> for MinComparator<T> where T: Ord {
-//     fn compare(a: &T, b: &T) -> Ordering {
-//         b.cmp(&a)
-//     }
-// }
 
 /// Structure wrapping a mutable reference to the greatest item on a
 /// `BinaryHeapPlus`.
@@ -348,7 +354,7 @@ impl<T: fmt::Debug + Ord, C: Compare<T>> fmt::Debug for BinaryHeapPlus<T, C> {
     }
 }
 
-impl<T: Ord> BinaryHeapPlus<T, CompareDescending> {
+impl<T: Ord> BinaryHeapPlus<T, MaxComparator> {
     /// # Examples
     ///
     /// Basic usage:
@@ -369,7 +375,7 @@ impl<T: Ord> BinaryHeapPlus<T, CompareDescending> {
     }
 }
 
-impl<T: Ord> BinaryHeapPlus<T, CompareAscending> {
+impl<T: Ord> BinaryHeapPlus<T, MinComparator> {
     /// # Examples
     ///
     /// Basic usage:
@@ -393,7 +399,7 @@ impl<T: Ord> BinaryHeapPlus<T, CompareAscending> {
     /// assert_eq!(heap.pop(), Some(5));
     /// assert_eq!(heap.pop(), None);
     /// ```
-    pub fn with_min_cmp() -> BinaryHeapPlus<T, CompareAscending> {
+    pub fn with_min_cmp() -> BinaryHeapPlus<T, MinComparator> {
         BinaryHeapPlus { 
             data: vec![],
             phantom: PhantomData,
@@ -446,7 +452,7 @@ impl<T: Ord, C: Compare<T>> BinaryHeapPlus<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::*;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
+    /// let heap = BinaryHeapPlus::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
     /// for x in heap.iter() {
@@ -1177,8 +1183,8 @@ impl<T: Ord, C: Compare<T>> From<Vec<T>> for BinaryHeapPlus<T, C> {
 }
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-// impl<T> From<BinaryHeapPlus<T>> for Vec<T> {
-//     fn from(heap: BinaryHeapPlus<T>) -> Vec<T> {
+// impl<T, C: Compare<T>> From<BinaryHeapPlus<T, C>> for Vec<T> {
+//     fn from(heap: BinaryHeapPlus<T, C>) -> Vec<T> {
 //         heap.data
 //     }
 // }
