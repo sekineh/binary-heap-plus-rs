@@ -2,5 +2,7 @@
 name = "binary-heap-plus"
 version = "0.1.0"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
+description = "Enhanced version of std::collections::BinaryHeap"
+license = "MIT"
 
 [dependencies]
