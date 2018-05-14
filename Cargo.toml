@@ -1,8 +1,9 @@
 [package]
 name = "binary-heap-plus"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
 description = "Enhanced version of std::collections::BinaryHeap"
 license = "MIT"
+repository = "https://github.com/sekineh/binary-heap-plus-rs"
 
 [dependencies]
