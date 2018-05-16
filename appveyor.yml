@@ -3,14 +3,14 @@
 
 environment:
   global:
-  # TODO This is the Rust channel that build jobs will use by default but can be
+  # DONE This is the Rust channel that build jobs will use by default but can be
   # overridden on a case by case basis down below
     RUST_VERSION: stable
 
-    # TODO Update this to match the name of your project.
-    CRATE_NAME: trust
+    # DONE Update this to match the name of your project.
+    CRATE_NAME: binary-heap-plus
 
-  # TODO These are all the build jobs. Adjust as necessary. Comment out what you
+  # DONE These are all the build jobs. Adjust as necessary. Comment out what you
   # don't need
   matrix:
     # MinGW
@@ -66,13 +66,13 @@ deploy:
   auth_token:
     secure: t3puM/2hOig26EHhAodcZBc61NywF7/PFEpimR6SwGaCiqS07KR5i7iAhSABmBp7
   description: ''
-  on:
-    # TODO Here you can pick which targets will generate binary releases
-    # In this example, there are some targets that are tested using the stable
-    # and nightly channels. This condition makes sure there is only one release
-    # for such targets and that's generated using the stable channel
-    RUST_VERSION: stable
-    appveyor_repo_tag: true
+  on: false
+    # # TODO Here you can pick which targets will generate binary releases
+    # # In this example, there are some targets that are tested using the stable
+    # # and nightly channels. This condition makes sure there is only one release
+    # # for such targets and that's generated using the stable channel
+    # RUST_VERSION: stable
+    # appveyor_repo_tag: true
   provider: GitHub
 
 cache:
