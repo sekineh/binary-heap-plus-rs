@@ -469,7 +469,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     }
 }
 
-impl<T: Ord, F> BinaryHeap<T, FnComparator<F>> 
+impl<T, F> BinaryHeap<T, FnComparator<F>> 
 where F: Clone + FnMut(&T, &T) -> Ordering,
 {
     /// Creates an empty `BinaryHeap`. 
