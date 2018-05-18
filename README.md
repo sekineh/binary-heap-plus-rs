@@ -49,10 +49,17 @@ In future, the trait `Compare<T>` might be replaced with `FnMut(&T, &T) -> Order
 
 To do that, rustc needs to stabilize a few unstable features.
 
+## Thanks
+
+- I received many valuable feedback from Pre-RFC thread [1].
+  - The current design is based on @ExpHP's suggestion that compiles on stable compiler.
+  - DDOtten, steven099, CAD97, ExpHP, scottmcm, Nemo157 and gnzlbg, thanks for looking into the design!
+- @ulysseB sent me a first pull request!
+
 ## References
 
-See the following discussions for the background:
-- https://internals.rust-lang.org/t/pre-rfc-binaryheap-flexibility/7482
+See the following discussions for the background of the crate:
+- [1] https://internals.rust-lang.org/t/pre-rfc-binaryheap-flexibility/7482
 - https://users.rust-lang.org/t/binaryheap-flexibility-revisited-supporting-other-than-max-heap/17062
 - https://users.rust-lang.org/t/binaryheap-flexibility/8766
 - https://github.com/rust-lang/rust/issues/38886
