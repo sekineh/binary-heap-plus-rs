@@ -9,4 +9,9 @@ readme = "README.md"
 keywords = ["binary", "heap", "priority", "queue"]
 category = ["data-structures", "algorithms", ]
 
+[features]
+serde1 = ["serde", "serde_derive"]
+
 [dependencies]
+serde = { version = "1", optional = true }
+serde_derive = { version = "^1.0.38", optional = true }

@@ -1,6 +1,8 @@
 mod binary_heap;
 pub use binary_heap::*;
 extern crate core;
+#[cfg(feature="serde1")] extern crate serde;
+#[cfg(feature="serde1")] #[macro_use] extern crate serde_derive;
 
 /// An intermediate trait for specialization of `Extend`.
 // #[doc(hidden)]

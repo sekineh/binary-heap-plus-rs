@@ -229,6 +229,7 @@ use core::fmt;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
+#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
 pub struct BinaryHeap<T, C = MaxComparator> where C: Compare<T> {
     data: Vec<T>,
     cmp: C,
@@ -243,6 +244,7 @@ pub trait Compare<T>: Clone {
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
+#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
 #[derive(Clone, Debug)]
 pub struct MaxComparator;
 
@@ -254,6 +256,7 @@ impl<T: Ord> Compare<T> for MaxComparator {
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
+#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
 #[derive(Clone, Debug)]
 pub struct MinComparator;
 
@@ -264,6 +267,7 @@ impl<T: Ord> Compare<T> for MinComparator {
 }
 
 /// The comparator defined by closure
+#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
 #[derive(Clone, Debug)]
 pub struct FnComparator<F>(pub F);
 
@@ -276,6 +280,7 @@ where F: Clone + FnMut(&T, &T) -> Ordering,
 }
 
 /// The comparator ordered by key
+#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
 #[derive(Clone, Debug)]
 pub struct KeyComparator<F: Clone>(pub F);
 
