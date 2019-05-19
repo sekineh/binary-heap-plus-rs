@@ -12,7 +12,9 @@ main() {
     fi
 
     cross test --target $TARGET
+    cross test --target $TARGET --features serde1
     cross test --target $TARGET --release
+    cross test --target $TARGET --release --features serde1
 
     # cross run --target $TARGET
     # cross run --target $TARGET --release
