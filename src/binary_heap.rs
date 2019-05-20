@@ -9,7 +9,7 @@
 // except according to those terms.
 
 //! A priority queue implemented with a binary heap.
-//! 
+//!
 //! Note: This version is folked from Rust standartd library, which only supports
 //! max heap.
 //!
@@ -161,16 +161,16 @@
 // use core::ops::{Deref, DerefMut, Place, Placer, InPlace};
 // use core::iter::{FromIterator, FusedIterator};
 use std::cmp::Ordering;
-use std::slice;
 use std::iter::FromIterator;
+use std::slice;
 // use std::iter::FusedIterator;
 // use std::vec::Drain;
-use std::vec;
-use std::ops::DerefMut;
-use std::ops::Deref;
-use core::mem::{swap, size_of};
-use core::ptr;
 use core::fmt;
+use core::mem::{size_of, swap};
+use core::ptr;
+use std::ops::Deref;
+use std::ops::DerefMut;
+use std::vec;
 
 // use slice;
 // use vec::{self, Vec};
@@ -229,8 +229,11 @@ use core::fmt;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
-pub struct BinaryHeap<T, C = MaxComparator> where C: Compare<T> {
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+pub struct BinaryHeap<T, C = MaxComparator>
+where
+    C: Compare<T>,
+{
     data: Vec<T>,
     cmp: C,
 }
@@ -244,7 +247,7 @@ pub trait Compare<T>: Clone {
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
-#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct MaxComparator;
 
@@ -256,7 +259,7 @@ impl<T: Ord> Compare<T> for MaxComparator {
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
-#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct MinComparator;
 
@@ -267,12 +270,13 @@ impl<T: Ord> Compare<T> for MinComparator {
 }
 
 /// The comparator defined by closure
-#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct FnComparator<F>(pub F);
 
 impl<T, F> Compare<T> for FnComparator<F>
-where F: Clone + FnMut(&T, &T) -> Ordering,
+where
+    F: Clone + FnMut(&T, &T) -> Ordering,
 {
     fn compare(&mut self, a: &T, b: &T) -> Ordering {
         self.0(a, b)
@@ -280,18 +284,18 @@ where F: Clone + FnMut(&T, &T) -> Ordering,
 }
 
 /// The comparator ordered by key
-#[cfg_attr(feature="serde1", derive(Serialize,Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 #[derive(Clone, Debug)]
 pub struct KeyComparator<F: Clone>(pub F);
 
 impl<K: Ord, T, F> Compare<T> for KeyComparator<F>
-where F: Clone + FnMut(&T) -> K,
+where
+    F: Clone + FnMut(&T) -> K,
 {
     fn compare(&mut self, a: &T, b: &T) -> Ordering {
         self.0(a).cmp(&self.0(b))
     }
 }
-
 
 /// Structure wrapping a mutable reference to the greatest item on a
 /// `BinaryHeap`.
@@ -310,9 +314,7 @@ pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
 // #[stable(feature = "collection_debug", since = "1.17.0")]
 impl<'a, T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'a, T, C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("PeekMut")
-         .field(&self.heap.data[0])
-         .finish()
+        f.debug_tuple("PeekMut").field(&self.heap.data[0]).finish()
     }
 }
 
@@ -353,7 +355,10 @@ impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
 // #[stable(feature = "rust1", since = "1.0.0")]
 impl<T: Clone, C: Compare<T>> Clone for BinaryHeap<T, C> {
     fn clone(&self) -> Self {
-        BinaryHeap { data: self.data.clone(), cmp: self.cmp.clone() }
+        BinaryHeap {
+            data: self.data.clone(),
+            cmp: self.cmp.clone(),
+        }
     }
 
     fn clone_from(&mut self, source: &Self) {
@@ -377,10 +382,9 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
     }
 }
 
-
 impl<T: Ord> BinaryHeap<T> {
     /// Creates an empty `BinaryHeap`.
-    /// 
+    ///
     /// This default version will create a max-heap.
     ///
     /// # Examples
@@ -397,7 +401,10 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new() -> Self {
-        BinaryHeap { data: vec![], cmp: MaxComparator }
+        BinaryHeap {
+            data: vec![],
+            cmp: MaxComparator,
+        }
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -406,7 +413,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// until it contains at least that many values.
     ///
     /// This default version will create a max-heap.
-    /// 
+    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -422,13 +429,16 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity(capacity: usize) -> Self {
-        BinaryHeap { data: Vec::with_capacity(capacity), cmp: MaxComparator }
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
+            cmp: MaxComparator,
+        }
     }
 }
 
 impl<T: Ord> BinaryHeap<T, MinComparator> {
-    /// Creates an empty `BinaryHeap`. 
-    /// 
+    /// Creates an empty `BinaryHeap`.
+    ///
     /// The `_min()` version will create a min-heap.
     ///
     /// # Examples
@@ -445,7 +455,10 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_min() -> Self {
-        BinaryHeap { data: vec![], cmp: MinComparator }
+        BinaryHeap {
+            data: vec![],
+            cmp: MinComparator,
+        }
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -454,7 +467,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// until it contains at least that many values.
     ///
     /// The `_min()` version will create a min-heap.
-    /// 
+    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -470,15 +483,19 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_min(capacity: usize) -> Self {
-        BinaryHeap { data: Vec::with_capacity(capacity), cmp: MinComparator }
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
+            cmp: MinComparator,
+        }
     }
 }
 
-impl<T, F> BinaryHeap<T, FnComparator<F>> 
-where F: Clone + FnMut(&T, &T) -> Ordering,
+impl<T, F> BinaryHeap<T, FnComparator<F>>
+where
+    F: Clone + FnMut(&T, &T) -> Ordering,
 {
-    /// Creates an empty `BinaryHeap`. 
-    /// 
+    /// Creates an empty `BinaryHeap`.
+    ///
     /// The `_by()` version will create a heap ordered by given closure.
     ///
     /// # Examples
@@ -495,7 +512,7 @@ where F: Clone + FnMut(&T, &T) -> Ordering,
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_by(f: F) -> Self {
-        BinaryHeap { 
+        BinaryHeap {
             data: vec![],
             cmp: FnComparator(f),
         }
@@ -507,7 +524,7 @@ where F: Clone + FnMut(&T, &T) -> Ordering,
     /// until it contains at least that many values.
     ///
     /// The `_by()` version will create a heap ordered by given closure.
-    /// 
+    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -523,18 +540,19 @@ where F: Clone + FnMut(&T, &T) -> Ordering,
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_by(capacity: usize, f: F) -> Self {
-        BinaryHeap { 
-            data: Vec::with_capacity(capacity),             
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
             cmp: FnComparator(f),
         }
     }
 }
 
-impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>> 
-where F: Clone + FnMut(&T) -> K,
+impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>>
+where
+    F: Clone + FnMut(&T) -> K,
 {
-    /// Creates an empty `BinaryHeap`. 
-    /// 
+    /// Creates an empty `BinaryHeap`.
+    ///
     /// The `_by_key()` version will create a heap ordered by key coverted by given closure.
     ///
     /// # Examples
@@ -551,7 +569,7 @@ where F: Clone + FnMut(&T) -> K,
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_by_key(f: F) -> Self {
-        BinaryHeap { 
+        BinaryHeap {
             data: vec![],
             cmp: KeyComparator(f),
         }
@@ -563,7 +581,7 @@ where F: Clone + FnMut(&T) -> K,
     /// until it contains at least that many values.
     ///
     /// The `_by_key()` version will create a heap ordered by key coverted by given closure.
-    /// 
+    ///
     /// # Examples
     ///
     /// Basic usage:
@@ -579,8 +597,8 @@ where F: Clone + FnMut(&T) -> K,
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
-        BinaryHeap { 
-            data: Vec::with_capacity(capacity),             
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
             cmp: KeyComparator(f),
         }
     }
@@ -605,7 +623,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn iter(&self) -> Iter<T> {
-        Iter { iter: self.data.iter() }
+        Iter {
+            iter: self.data.iter(),
+        }
     }
 
     /// Returns the greatest item in the binary heap, or `None` if it is empty.
@@ -888,7 +908,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
                 let right = child + 1;
                 // compare with the greater of the two children
                 // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater {
+                if right < end
+                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
+                {
                     child = right;
                 }
                 // if we are already in order, stop.
@@ -922,7 +944,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
                 let right = child + 1;
                 // compare with the greater of the two children
                 // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater {
+                if right < end
+                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
+                {
                     child = right;
                 }
                 hole.move_to(child);
@@ -996,7 +1020,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     #[inline]
     // #[stable(feature = "drain", since = "1.6.0")]
     pub fn drain(&mut self) -> Drain<T> {
-        Drain { iter: self.data.drain(..) }
+        Drain {
+            iter: self.data.drain(..),
+        }
     }
 
     /// Drops all items from the binary heap.
@@ -1169,9 +1195,7 @@ pub struct Iter<'a, T: 'a> {
 // #[stable(feature = "collection_debug", since = "1.17.0")]
 impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_tuple("Iter")
-         .field(&self.iter.as_slice())
-         .finish()
+        f.debug_tuple("Iter").field(&self.iter.as_slice()).finish()
     }
 }
 
@@ -1179,7 +1203,9 @@ impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
 // #[stable(feature = "rust1", since = "1.0.0")]
 impl<'a, T> Clone for Iter<'a, T> {
     fn clone(&self) -> Iter<'a, T> {
-        Iter { iter: self.iter.clone() }
+        Iter {
+            iter: self.iter.clone(),
+        }
     }
 }
 
@@ -1233,8 +1259,8 @@ pub struct IntoIter<T> {
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_tuple("IntoIter")
-         .field(&self.iter.as_slice())
-         .finish()
+            .field(&self.iter.as_slice())
+            .finish()
     }
 }
 
@@ -1320,7 +1346,10 @@ impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
 impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
     fn from(vec: Vec<T>) -> BinaryHeap<T> {
-        let mut heap = BinaryHeap { data: vec, cmp: MaxComparator };
+        let mut heap = BinaryHeap {
+            data: vec,
+            cmp: MaxComparator,
+        };
         heap.rebuild();
         heap
     }
@@ -1370,7 +1399,9 @@ impl<T, C: Compare<T>> IntoIterator for BinaryHeap<T, C> {
     /// }
     /// ```
     fn into_iter(self) -> IntoIter<T> {
-        IntoIter { iter: self.data.into_iter() }
+        IntoIter {
+            iter: self.data.into_iter(),
+        }
     }
 }
 

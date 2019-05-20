@@ -1,8 +1,8 @@
 [package]
 name = "binary-heap-plus"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
-description = "Enhanced version of std::collections::BinaryHeap that supports arbitrary order."
+description = "Enhanced version of std::collections::BinaryHeap that supports max, min, and custom-order heaps."
 license = "MIT"
 repository = "https://github.com/sekineh/binary-heap-plus-rs"
 readme = "README.md"
@@ -18,3 +18,7 @@ serde_derive = { version = "^1.0.38", optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.39"
+
+[badges]
+travis-ci = { repository = "sekineh/binary-heap-plus-rs" }
+appveyor = { repository = "sekineh/binary-heap-plus-rs" }

@@ -55,6 +55,7 @@ To do that, rustc needs to stabilize a few unstable features.
   - The current design is based on @ExpHP's suggestion that compiles on stable compiler.
   - DDOtten, steven099, CAD97, ExpHP, scottmcm, Nemo157 and gnzlbg, thanks for looking into the design!
 - @ulysseB sent me a first pull request!
+- @inesseq contributed feature `serde1`.
 
 ## References
 
