@@ -453,7 +453,6 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_min() -> Self {
         BinaryHeap {
             data: vec![],
@@ -481,7 +480,6 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_min(capacity: usize) -> Self {
         BinaryHeap {
             data: Vec::with_capacity(capacity),
@@ -510,7 +508,6 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_by(f: F) -> Self {
         BinaryHeap {
             data: vec![],
@@ -538,7 +535,6 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_by(capacity: usize, f: F) -> Self {
         BinaryHeap {
             data: Vec::with_capacity(capacity),
@@ -567,7 +563,6 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new_by_key(f: F) -> Self {
         BinaryHeap {
             data: vec![],
@@ -595,7 +590,6 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
         BinaryHeap {
             data: Vec::with_capacity(capacity),
