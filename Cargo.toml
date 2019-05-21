@@ -1,6 +1,6 @@
 [package]
 name = "binary-heap-plus"
-version = "0.1.5"
+version = "0.1.6"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
 description = "Enhanced version of std::collections::BinaryHeap that supports max, min, and custom-order heaps."
 license = "MIT"
