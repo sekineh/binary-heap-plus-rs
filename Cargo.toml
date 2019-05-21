@@ -1,6 +1,6 @@
 [package]
 name = "binary-heap-plus"
-version = "0.1.6"
+version = "0.2.0"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
 description = "Enhanced version of std::collections::BinaryHeap that supports max, min, and custom-order heaps."
 license = "MIT"
@@ -13,6 +13,7 @@ category = ["data-structures", "algorithms", ]
 serde1 = ["serde", "serde_derive"]
 
 [dependencies]
+compare = "0.1.0"
 serde = { version = "1", optional = true }
 serde_derive = { version = "^1.0.38", optional = true }
 

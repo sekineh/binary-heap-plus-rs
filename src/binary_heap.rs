@@ -171,6 +171,7 @@ use core::ptr;
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::vec;
+use compare::Compare;
 
 // use slice;
 // use vec::{self, Vec};
@@ -238,21 +239,14 @@ where
     cmp: C,
 }
 
-/// Simpler replacement for the `Ord` trait.
-/// The difference is that you can define multiple sort orders on a single type `T`.
-/// Unlike `Ord` trait, `Compare<T>` trait can be easily implemented by providing a single function.
-pub trait Compare<T>: Clone {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering;
-}
-
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MaxComparator;
 
 impl<T: Ord> Compare<T> for MaxComparator {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         a.cmp(&b)
     }
 }
@@ -260,39 +254,39 @@ impl<T: Ord> Compare<T> for MaxComparator {
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MinComparator;
 
 impl<T: Ord> Compare<T> for MinComparator {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         b.cmp(&a)
     }
 }
 
 /// The comparator defined by closure
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct FnComparator<F>(pub F);
 
 impl<T, F> Compare<T> for FnComparator<F>
 where
-    F: Clone + FnMut(&T, &T) -> Ordering,
+    F: Clone + Fn(&T, &T) -> Ordering,
 {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a, b)
     }
 }
 
 /// The comparator ordered by key
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct KeyComparator<F: Clone>(pub F);
 
 impl<K: Ord, T, F> Compare<T> for KeyComparator<F>
 where
-    F: Clone + FnMut(&T) -> K,
+    F: Clone + Fn(&T) -> K,
 {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a).cmp(&self.0(b))
     }
 }
@@ -353,7 +347,7 @@ impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone, C: Compare<T>> Clone for BinaryHeap<T, C> {
+impl<T: Clone, C: Compare<T> + Clone> Clone for BinaryHeap<T, C> {
     fn clone(&self) -> Self {
         BinaryHeap {
             data: self.data.clone(),
@@ -500,7 +494,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
 
 impl<T, F> BinaryHeap<T, FnComparator<F>>
 where
-    F: Clone + FnMut(&T, &T) -> Ordering,
+    F: Clone + Fn(&T, &T) -> Ordering,
 {
     /// Creates an empty `BinaryHeap`.
     ///
@@ -549,7 +543,7 @@ where
 
 impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>>
 where
-    F: Clone + FnMut(&T) -> K,
+    F: Clone + Fn(&T) -> K,
 {
     /// Creates an empty `BinaryHeap`.
     ///

@@ -54,6 +54,10 @@ for the same purpose.
 
 # Changes
 
+## v0.2.0
+
+* Use `Compare` trait from `compare` crate instead of our own definition.
+
 ## v0.1.6
 
 * Add generic constructor `from_vec()` and `from_vec_cmp()`.
