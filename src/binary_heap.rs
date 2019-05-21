@@ -397,7 +397,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
         let mut heap = BinaryHeap {
             data: vec,
-            cmp: cmp.clone(),
+            cmp,
         };
         heap.rebuild();
         heap
