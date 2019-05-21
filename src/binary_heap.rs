@@ -248,7 +248,7 @@ pub trait Compare<T>: Clone {
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct MaxComparator;
 
 impl<T: Ord> Compare<T> for MaxComparator {
@@ -260,7 +260,7 @@ impl<T: Ord> Compare<T> for MaxComparator {
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct MinComparator;
 
 impl<T: Ord> Compare<T> for MinComparator {
@@ -382,6 +382,28 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
     }
 }
 
+impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
+    pub fn from_vec(vec: Vec<T>) -> Self {
+        let mut heap = BinaryHeap {
+            data: vec,
+            cmp: C::default(),
+        };
+        heap.rebuild();
+        heap
+    }
+}
+
+impl<T, C: Compare<T>> BinaryHeap<T, C> {
+    pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
+        let mut heap = BinaryHeap {
+            data: vec,
+            cmp: cmp.clone(),
+        };
+        heap.rebuild();
+        heap
+    }
+}
+
 impl<T: Ord> BinaryHeap<T> {
     /// Creates an empty `BinaryHeap`.
     ///
@@ -401,10 +423,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn new() -> Self {
-        BinaryHeap {
-            data: vec![],
-            cmp: MaxComparator,
-        }
+        BinaryHeap::from_vec(vec![])
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -429,10 +448,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn with_capacity(capacity: usize) -> Self {
-        BinaryHeap {
-            data: Vec::with_capacity(capacity),
-            cmp: MaxComparator,
-        }
+        BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
 }
 
@@ -454,10 +470,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     pub fn new_min() -> Self {
-        BinaryHeap {
-            data: vec![],
-            cmp: MinComparator,
-        }
+        BinaryHeap::from_vec(vec![])
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -481,10 +494,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     pub fn with_capacity_min(capacity: usize) -> Self {
-        BinaryHeap {
-            data: Vec::with_capacity(capacity),
-            cmp: MinComparator,
-        }
+        BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
 }
 
@@ -509,10 +519,7 @@ where
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     pub fn new_by(f: F) -> Self {
-        BinaryHeap {
-            data: vec![],
-            cmp: FnComparator(f),
-        }
+        BinaryHeap::from_vec_cmp(vec![], FnComparator(f))
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -536,10 +543,7 @@ where
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     pub fn with_capacity_by(capacity: usize, f: F) -> Self {
-        BinaryHeap {
-            data: Vec::with_capacity(capacity),
-            cmp: FnComparator(f),
-        }
+        BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), FnComparator(f))
     }
 }
 
@@ -549,7 +553,7 @@ where
 {
     /// Creates an empty `BinaryHeap`.
     ///
-    /// The `_by_key()` version will create a heap ordered by key coverted by given closure.
+    /// The `_by_key()` version will create a heap ordered by key converted by given closure.
     ///
     /// # Examples
     ///
@@ -564,10 +568,7 @@ where
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
     pub fn new_by_key(f: F) -> Self {
-        BinaryHeap {
-            data: vec![],
-            cmp: KeyComparator(f),
-        }
+        BinaryHeap::from_vec_cmp(vec![], KeyComparator(f))
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -591,10 +592,7 @@ where
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
     pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
-        BinaryHeap {
-            data: Vec::with_capacity(capacity),
-            cmp: KeyComparator(f),
-        }
+        BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), KeyComparator(f))
     }
 }
 
@@ -1339,13 +1337,9 @@ impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
 impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
-    fn from(vec: Vec<T>) -> BinaryHeap<T> {
-        let mut heap = BinaryHeap {
-            data: vec,
-            cmp: MaxComparator,
-        };
-        heap.rebuild();
-        heap
+    /// creates a max heap from a vec
+    fn from(vec: Vec<T>) -> Self {
+        BinaryHeap::from_vec(vec)
     }
 }
 
