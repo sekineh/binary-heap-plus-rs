@@ -1,15 +1,20 @@
 //! This crate provides `BinaryHeap` which is backward-compatible with `std::collections::BinaryHeap`.
-//!
+//! 
+//! Added features include:
+//! * Heaps other than max heap.
+//! * Optional `serde` feature.
+//! 
 //! # Constructers
 //!
 //! ## Generic methods to create different kind of heaps from initial `vec` data.
 //!
 //! * `BinaryHeap::from_vec(vec)`
 //! * `BinaryHeap::from_vec_cmp(vec, cmp)`
+//! 
 //! ```
 //! use binary_heap_plus::*;
 //!
-//! // max heap
+//! // max heap (default)
 //! let mut heap: BinaryHeap<i32> = BinaryHeap::from_vec(vec![1,5,3]);
 //! assert_eq!(heap.pop(), Some(5));
 //!
@@ -18,8 +23,8 @@
 //! assert_eq!(heap.pop(), Some(1));
 //!
 //! // custom-sort heap
-//! let mut heap = BinaryHeap::from_vec_cmp(vec![1,5,3], FnComparator(|a: &i32, b: &i32| a.cmp(b)));
-//! assert_eq!(heap.pop(), Some(5));
+//! let mut heap = BinaryHeap::from_vec_cmp(vec![1,5,3], FnComparator(|a: &i32, b: &i32| b.cmp(a)));
+//! assert_eq!(heap.pop(), Some(1));
 //!
 //! // custom-key heap
 //! let mut heap = BinaryHeap::from_vec_cmp(vec![6,3,1], KeyComparator(|k: &i32| k % 4));
@@ -27,8 +32,10 @@
 //!
 //! // TIP: How to reuse a comparator
 //! let mod4_comparator = KeyComparator(|k: &_| k % 4);
-//! let mut heap = BinaryHeap::from_vec_cmp(vec![6,3,1], mod4_comparator);
-//! assert_eq!(heap.pop(), Some(3));
+//! let mut heap1 = BinaryHeap::from_vec_cmp(vec![6,3,1], mod4_comparator);
+//! assert_eq!(heap1.pop(), Some(3));
+//! let mut heap2 = BinaryHeap::from_vec_cmp(vec![2,4,1], mod4_comparator);
+//! assert_eq!(heap2.pop(), Some(2));
 //! ```
 //!
 //! ## Dedicated methods to create different kind of heaps
