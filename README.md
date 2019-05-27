@@ -54,6 +54,14 @@ for the same purpose.
 
 # Changes
 
+## v0.2.0
+
+* [COMPATIBILITY CHANGE] Use `Compare` trait from `compare` crate instead of our own definition.
+Most users should not be affected by this. TIP: External `Compare<T>` impls needs to be updated to use `Fn` instead of `FnMut`.
+* [COMPATIBILITY CHANGE] rename feature `serde1` to `serde` in order to comply with the guideline: 
+https://rust-lang-nursery.github.io/api-guidelines/interoperability.html#c-serde
+* Refactor ctor impl.
+
 ## v0.1.6
 
 * Add generic constructor `from_vec()` and `from_vec_cmp()`.

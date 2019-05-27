@@ -165,9 +165,12 @@ use std::iter::FromIterator;
 use std::slice;
 // use std::iter::FusedIterator;
 // use std::vec::Drain;
+use compare::Compare;
 use core::fmt;
 use core::mem::{size_of, swap};
 use core::ptr;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::vec;
@@ -229,7 +232,7 @@ use std::vec;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryHeap<T, C = MaxComparator>
 where
     C: Compare<T>,
@@ -238,61 +241,54 @@ where
     cmp: C,
 }
 
-/// Simpler replacement for the `Ord` trait.
-/// The difference is that you can define multiple sort orders on a single type `T`.
-/// Unlike `Ord` trait, `Compare<T>` trait can be easily implemented by providing a single function.
-pub trait Compare<T>: Clone {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering;
-}
-
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MaxComparator;
 
 impl<T: Ord> Compare<T> for MaxComparator {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         a.cmp(&b)
     }
 }
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MinComparator;
 
 impl<T: Ord> Compare<T> for MinComparator {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         b.cmp(&a)
     }
 }
 
 /// The comparator defined by closure
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct FnComparator<F>(pub F);
 
 impl<T, F> Compare<T> for FnComparator<F>
 where
-    F: Clone + FnMut(&T, &T) -> Ordering,
+    F: Clone + Fn(&T, &T) -> Ordering,
 {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a, b)
     }
 }
 
 /// The comparator ordered by key
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
-#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct KeyComparator<F: Clone>(pub F);
 
 impl<K: Ord, T, F> Compare<T> for KeyComparator<F>
 where
-    F: Clone + FnMut(&T) -> K,
+    F: Clone + Fn(&T) -> K,
 {
-    fn compare(&mut self, a: &T, b: &T) -> Ordering {
+    fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a).cmp(&self.0(b))
     }
 }
@@ -353,7 +349,7 @@ impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone, C: Compare<T>> Clone for BinaryHeap<T, C> {
+impl<T: Clone, C: Compare<T> + Clone> Clone for BinaryHeap<T, C> {
     fn clone(&self) -> Self {
         BinaryHeap {
             data: self.data.clone(),
@@ -383,22 +379,22 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
 }
 
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
+    /// Generic constructor for `BinaryHeap` from `Vec`.
+    ///
+    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
+    /// it's natural to construct it from `Vec`.
     pub fn from_vec(vec: Vec<T>) -> Self {
-        let mut heap = BinaryHeap {
-            data: vec,
-            cmp: C::default(),
-        };
-        heap.rebuild();
-        heap
+        BinaryHeap::from_vec_cmp(vec, C::default())
     }
 }
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
+    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    ///
+    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
+    /// it's natural to construct it from `Vec`.
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
-        let mut heap = BinaryHeap {
-            data: vec,
-            cmp,
-        };
+        let mut heap = BinaryHeap { data: vec, cmp };
         heap.rebuild();
         heap
     }
@@ -500,7 +496,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
 
 impl<T, F> BinaryHeap<T, FnComparator<F>>
 where
-    F: Clone + FnMut(&T, &T) -> Ordering,
+    F: Clone + Fn(&T, &T) -> Ordering,
 {
     /// Creates an empty `BinaryHeap`.
     ///
@@ -549,7 +545,7 @@ where
 
 impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>>
 where
-    F: Clone + FnMut(&T) -> K,
+    F: Clone + Fn(&T) -> K,
 {
     /// Creates an empty `BinaryHeap`.
     ///

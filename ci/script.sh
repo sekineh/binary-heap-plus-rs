@@ -5,16 +5,18 @@ set -ex
 # DONE This is the "test phase", tweak it as you see fit
 main() {
     cross build --target $TARGET
+    cross build --target $TARGET --features serde
     cross build --target $TARGET --release
+    cross build --target $TARGET --release --features serde
 
     if [ ! -z $DISABLE_TESTS ]; then
         return
     fi
 
     cross test --target $TARGET
-    cross test --target $TARGET --features serde1
+    cross test --target $TARGET --features serde
     cross test --target $TARGET --release
-    cross test --target $TARGET --release --features serde1
+    cross test --target $TARGET --release --features serde
 
     # cross run --target $TARGET
     # cross run --target $TARGET --release
