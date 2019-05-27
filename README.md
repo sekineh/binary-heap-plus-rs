@@ -56,7 +56,9 @@ for the same purpose.
 
 ## v0.2.0
 
-* Use `Compare` trait from `compare` crate instead of our own definition.
+* [COMPATIBILITY CHANGE] Use `Compare` trait from `compare` crate instead of our own definition.
+Most users should not be affected by this. TIP: External `Compare<T>` impls needs to be updated to use `Fn` instead of `FnMut`.
+* Refactor ctor impl.
 
 ## v0.1.6
 
