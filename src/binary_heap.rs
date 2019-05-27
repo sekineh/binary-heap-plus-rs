@@ -377,17 +377,20 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
 }
 
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
+    /// Generic constructor for `BinaryHeap` from `Vec`.
+    /// 
+    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
+    /// it's natural to construct it from `Vec`.
     pub fn from_vec(vec: Vec<T>) -> Self {
-        let mut heap = BinaryHeap {
-            data: vec,
-            cmp: C::default(),
-        };
-        heap.rebuild();
-        heap
+        BinaryHeap::from_vec_cmp(vec, C::default())
     }
 }
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
+    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    /// 
+    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
+    /// it's natural to construct it from `Vec`.
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
         let mut heap = BinaryHeap {
             data: vec,
