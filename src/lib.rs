@@ -41,14 +41,14 @@
 mod binary_heap;
 pub use binary_heap::*;
 extern crate core;
-#[cfg(feature = "serde1")]
+#[cfg(feature = "serde")]
 extern crate serde;
-#[cfg(feature = "serde1")]
-#[macro_use]
-extern crate serde_derive;
+// #[cfg(feature = "serde")]
+// #[macro_use]
+// extern crate serde_derive;
 extern crate compare;
 
-#[cfg(all(feature = "serde1", test))]
+#[cfg(all(feature = "serde", test))]
 extern crate serde_json;
 
 /// An intermediate trait for specialization of `Extend`.
@@ -362,9 +362,9 @@ mod from_liballoc {
 
 }
 
-#[cfg(feature = "serde1")]
+#[cfg(feature = "serde")]
 #[cfg(test)]
-mod tests_serde1 {
+mod tests_serde {
     use super::binary_heap::*;
     use serde_json;
 

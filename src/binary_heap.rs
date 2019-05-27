@@ -165,13 +165,15 @@ use std::iter::FromIterator;
 use std::slice;
 // use std::iter::FusedIterator;
 // use std::vec::Drain;
+use compare::Compare;
 use core::fmt;
 use core::mem::{size_of, swap};
 use core::ptr;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 use std::ops::DerefMut;
 use std::vec;
-use compare::Compare;
 
 // use slice;
 // use vec::{self, Vec};
@@ -230,7 +232,7 @@ use compare::Compare;
 /// assert!(heap.is_empty())
 /// ```
 // #[stable(feature = "rust1", since = "1.0.0")]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryHeap<T, C = MaxComparator>
 where
     C: Compare<T>,
@@ -241,7 +243,7 @@ where
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a max heap.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MaxComparator;
 
@@ -253,7 +255,7 @@ impl<T: Ord> Compare<T> for MaxComparator {
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
 /// set up a min heap.
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct MinComparator;
 
@@ -264,7 +266,7 @@ impl<T: Ord> Compare<T> for MinComparator {
 }
 
 /// The comparator defined by closure
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct FnComparator<F>(pub F);
 
@@ -278,7 +280,7 @@ where
 }
 
 /// The comparator ordered by key
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
 pub struct KeyComparator<F: Clone>(pub F);
 
@@ -378,7 +380,7 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
 
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
     /// Generic constructor for `BinaryHeap` from `Vec`.
-    /// 
+    ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
     pub fn from_vec(vec: Vec<T>) -> Self {
@@ -388,14 +390,11 @@ impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
-    /// 
+    ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
-        let mut heap = BinaryHeap {
-            data: vec,
-            cmp,
-        };
+        let mut heap = BinaryHeap { data: vec, cmp };
         heap.rebuild();
         heap
     }
