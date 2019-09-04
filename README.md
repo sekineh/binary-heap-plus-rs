@@ -27,7 +27,39 @@ Your code will compile as before unless you use unstable APIs.
 
 This crate requires Rust 1.26 or later.
 
-# Added muthods
+# Recomended API to create a heap
+
+For max/min heap, `BiaryHeap::from_vec()` is most versatile way to create a heap.
+
+```rust
+    // max heap
+    let mut h: BinaryHeap<i32> = BinaryHeap::from_vec(vec![]);
+    // max heap with initial capacity
+    let mut h: BinaryHeap<i32> = BinaryHeap::from_vec(Vec::with_capacity(16));
+    // max heap from iterator
+    let mut h: BinaryHeap<i32> = BinaryHeap::from_vec((0..42).collect());
+    assert_eq!(h.pop(), Some(41));
+
+    // min heap
+    let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec(vec![]);
+    // max heap with initial capacity
+    let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec(Vec::with_capacity(16));
+    // max heap from iterator
+    let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec((0..42).collect());
+    assert_eq!(h.pop(), Some(0));
+```
+
+For custom heap, `BinaryHeap::from_vec_cmp()` works in a similar way. The difference is that you add the comparator closure.
+```rust
+    // custom heap: ordered by second value (_.1) of the tuples; min first
+    let mut h = BinaryHeap::from_vec_cmp(
+        vec![(1, 5), (3, 2), (2, 3)],
+        |a: &(i32, i32), b: &(i32, i32)| b.1.cmp(&a.1), // comparator
+    );
+    assert_eq!(h.pop(), Some((3, 2)));
+```
+
+# Added methods
 
 ## `BinaryHeap::new_xxx()`
 
