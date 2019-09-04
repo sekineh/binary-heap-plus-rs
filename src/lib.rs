@@ -1,16 +1,16 @@
 //! This crate provides `BinaryHeap` which is backward-compatible with `std::collections::BinaryHeap`.
-//! 
+//!
 //! Added features include:
 //! * Heaps other than max heap.
 //! * Optional `serde` feature.
-//! 
+//!
 //! # Constructers
 //!
 //! ## Generic methods to create different kind of heaps from initial `vec` data.
 //!
 //! * `BinaryHeap::from_vec(vec)`
 //! * `BinaryHeap::from_vec_cmp(vec, cmp)`
-//! 
+//!
 //! ```
 //! use binary_heap_plus::*;
 //!
@@ -392,5 +392,14 @@ mod tests_serde {
         let v0: Vec<_> = heap.into_iter().collect();
         let v1: Vec<_> = deserialized.into_iter().collect();
         assert_eq!(v0, v1);
+    }
+}
+
+#[cfg(test)]
+mod readme_test {
+    #[test]
+    fn readme() {
+        // unimplemented!();
+        docmatic::assert_file("README.md");
     }
 }
