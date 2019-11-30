@@ -272,7 +272,7 @@ pub struct FnComparator<F>(pub F);
 
 impl<T, F> Compare<T> for FnComparator<F>
 where
-    F: Clone + Fn(&T, &T) -> Ordering,
+    F: Fn(&T, &T) -> Ordering,
 {
     fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a, b)
@@ -282,11 +282,11 @@ where
 /// The comparator ordered by key
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Clone, Copy, Default, PartialEq, Eq, Debug)]
-pub struct KeyComparator<F: Clone>(pub F);
+pub struct KeyComparator<F>(pub F);
 
 impl<K: Ord, T, F> Compare<T> for KeyComparator<F>
 where
-    F: Clone + Fn(&T) -> K,
+    F: Fn(&T) -> K,
 {
     fn compare(&self, a: &T, b: &T) -> Ordering {
         self.0(a).cmp(&self.0(b))
@@ -496,7 +496,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
 
 impl<T, F> BinaryHeap<T, FnComparator<F>>
 where
-    F: Clone + Fn(&T, &T) -> Ordering,
+    F: Fn(&T, &T) -> Ordering,
 {
     /// Creates an empty `BinaryHeap`.
     ///
@@ -545,7 +545,7 @@ where
 
 impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>>
 where
-    F: Clone + Fn(&T) -> K,
+    F: Fn(&T) -> K,
 {
     /// Creates an empty `BinaryHeap`.
     ///
