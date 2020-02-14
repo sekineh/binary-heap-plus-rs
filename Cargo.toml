@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/sekineh/binary-heap-plus-rs"
 readme = "README.md"
 keywords = ["binary", "heap", "priority", "queue"]
-category = ["data-structures", "algorithms", ]
+categories = ["data-structures", "algorithms", ]
 
 [dependencies]
 compare = "0.1.0"
