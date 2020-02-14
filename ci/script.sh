@@ -13,8 +13,10 @@ main() {
         return
     fi
 
+    cross clean
     cross test --target $TARGET
     cross test --target $TARGET --features serde
+    cross clean
     cross test --target $TARGET --release
     cross test --target $TARGET --release --features serde
 
