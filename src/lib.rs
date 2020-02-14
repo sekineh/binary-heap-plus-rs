@@ -47,7 +47,7 @@
 //!
 
 mod binary_heap;
-pub use binary_heap::*;
+pub use crate::binary_heap::*;
 extern crate compare;
 extern crate core;
 #[cfg(feature = "serde")]
