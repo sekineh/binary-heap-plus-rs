@@ -394,12 +394,3 @@ mod tests_serde {
         assert_eq!(v0, v1);
     }
 }
-
-#[cfg(test)]
-mod readme_test {
-    #[test]
-    fn readme() {
-        // unimplemented!();
-        // docmatic::assert_file("README.md");
-    }
-}
