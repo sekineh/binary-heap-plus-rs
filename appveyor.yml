@@ -44,10 +44,10 @@ install:
 test_script:
   # we don't run the "test phase" when doing deploys
   - if [%APPVEYOR_REPO_TAG%]==[false] (
-      cargo build --target %TARGET% &&
-      cargo build --target %TARGET% --features serde &&
-      cargo build --target %TARGET% --release &&
-      cargo build --target %TARGET% --release --features serde &&
+      # cargo build --target %TARGET% &&
+      # cargo build --target %TARGET% --features serde &&
+      # cargo build --target %TARGET% --release &&
+      # cargo build --target %TARGET% --release --features serde &&
       cargo clean &&
       cargo test --target %TARGET% &&
       cargo clean &&
