@@ -4,6 +4,56 @@
 //! * Heaps other than max heap.
 //! * Optional `serde` feature.
 //!
+//! # Quick start
+//!
+//! ## Max/Min Heap
+//! 
+//! For max heap, `BiaryHeap::from_vec()` is the most versatile way to create a heap.
+//!
+//! ```rust
+//!     // extern crate binary_heap_plus;
+//!     use binary_heap_plus::*;
+//!
+//!     // max heap
+//!     let mut h: BinaryHeap<i32> = BinaryHeap::from_vec(vec![]);
+//!     // max heap with initial capacity
+//!     let mut h: BinaryHeap<i32> = BinaryHeap::from_vec(Vec::with_capacity(16));
+//!     // max heap from iterator
+//!     let mut h: BinaryHeap<i32> = BinaryHeap::from_vec((0..42).collect());
+//!     assert_eq!(h.pop(), Some(41));
+//! ```
+//! 
+//! Min heap is similar, but requires type annotation.
+//! 
+//! ```rust
+//!     // extern crate binary_heap_plus;
+//!     use binary_heap_plus::*;
+//!
+//!     // min heap
+//!     let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec(vec![]);
+//!     // min heap with initial capacity
+//!     let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec(Vec::with_capacity(16));
+//!     // min heap from iterator
+//!     let mut h: BinaryHeap<i32, MinComparator> = BinaryHeap::from_vec((0..42).collect());
+//!     assert_eq!(h.pop(), Some(0));
+//! ```
+//!
+//! ## Custom Heap
+//! 
+//! For custom heap, `BinaryHeap::from_vec_cmp()` works in a similar way to max/min heap. The only difference is that you add the comparator closure with apropriate signature.
+//! 
+//! ```rust
+//!     // extern crate binary_heap_plus;
+//!     use binary_heap_plus::*;
+//!
+//!     // custom heap: ordered by second value (_.1) of the tuples; min first
+//!     let mut h = BinaryHeap::from_vec_cmp(
+//!         vec![(1, 5), (3, 2), (2, 3)],
+//!         |a: &(i32, i32), b: &(i32, i32)| b.1.cmp(&a.1), // comparator closure here
+//!     );
+//!     assert_eq!(h.pop(), Some((3, 2)));
+//! ```
+//!
 //! # Constructers
 //!
 //! ## Generic methods to create different kind of heaps from initial `vec` data.
@@ -23,7 +73,7 @@
 //! assert_eq!(heap.pop(), Some(1));
 //!
 //! // custom-sort heap
-//! let mut heap = BinaryHeap::from_vec_cmp(vec![1,5,3], FnComparator(|a: &i32, b: &i32| b.cmp(a)));
+//! let mut heap = BinaryHeap::from_vec_cmp(vec![1,5,3], |a: &i32, b: &i32| b.cmp(a));
 //! assert_eq!(heap.pop(), Some(1));
 //!
 //! // custom-key heap
