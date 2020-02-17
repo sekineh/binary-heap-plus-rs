@@ -43,20 +43,18 @@ install:
 # TODO This is the "test phase", tweak it as you see fit
 test_script:
   # we don't run the "test phase" when doing deploys
-  - if [%APPVEYOR_REPO_TAG%]==[false] (
-      cargo build --target %TARGET% &&
-      rm -f target/debug/deps/*binary_heap_plus* &&
-      cargo test  --target %TARGET% &&
-      cargo build --target %TARGET% --features serde &&
-      rm -f target/debug/deps/*binary_heap_plus* &&
-      cargo test  --target %TARGET% --features serde &&
-      cargo build --target %TARGET% --release &&
-      rm -f target/release/deps/*binary_heap_plus* &&
-      cargo test  --target %TARGET% --release &&
-      cargo build --target %TARGET% --release --features serde &&
-      rm -f target/release/deps/*binary_heap_plus* &&
-      cargo test  --target %TARGET% --release --features serde
-    )
+  - cargo build --target %TARGET%
+  - rm target/%TARGET%/debug/deps/*binary_heap_plus*
+  - cargo test  --target %TARGET%
+  - cargo build --target %TARGET% --features serde
+  - rm target/%TARGET%/debug/deps/*binary_heap_plus*
+  - cargo test  --target %TARGET% --features serde
+  - cargo build --target %TARGET% --release
+  - rm target/%TARGET%/release/deps/*binary_heap_plus*
+  - cargo test  --target %TARGET% --release
+  - cargo build --target %TARGET% --release --features serde
+  - rm target/%TARGET%/release/deps/*binary_heap_plus*
+  - cargo test  --target %TARGET% --release --features serde
 
 before_deploy:
   # TODO Update this to build the artifacts that matter to you
