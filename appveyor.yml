@@ -43,16 +43,16 @@ install:
 # TODO This is the "test phase", tweak it as you see fit
 test_script:
   # we don't run the "test phase" when doing deploys
-  - cargo build --target %TARGET%
+  # - cargo build --target %TARGET%
   - rm target/%TARGET%/debug/deps/*binary_heap_plus*
   - cargo test  --target %TARGET%
-  - cargo build --target %TARGET% --features serde
+  # - cargo build --target %TARGET% --features serde
   - rm target/%TARGET%/debug/deps/*binary_heap_plus*
   - cargo test  --target %TARGET% --features serde
-  - cargo build --target %TARGET% --release
+  # - cargo build --target %TARGET% --release
   - rm target/%TARGET%/release/deps/*binary_heap_plus*
   - cargo test  --target %TARGET% --release
-  - cargo build --target %TARGET% --release --features serde
+  # - cargo build --target %TARGET% --release --features serde
   - rm target/%TARGET%/release/deps/*binary_heap_plus*
   - cargo test  --target %TARGET% --release --features serde
 
