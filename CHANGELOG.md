@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* Migrate to Rust 2018 Edition.
 * Bump MSRV (minimum supported rust version) to rust 1.31.1.
 * [CI] Switched to Github actions.
 * [CI] travis is removed because it was unreliable.
