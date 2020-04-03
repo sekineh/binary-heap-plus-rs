@@ -1,0 +1,60 @@
+name: Rust
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+        - macos-latest
+        rust:
+        - stable
+        - 1.31.1 # MSRV (Rust 2018)
+        cargo_args:
+        - ""
+        - --features serde
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Install toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: ${{ matrix.rust }}
+        override: true
+    
+    - name: Run cargo check
+      uses: actions-rs/cargo@v1
+      with:
+        command: check
+        args: ${{ matrix.cargo_args }}
+
+    - name: Run cargo build
+      uses: actions-rs/cargo@v1
+      with:
+        command: build
+        args: ${{ matrix.cargo_args }}
+
+    - name: Run cargo test
+      uses: actions-rs/cargo@v1
+      with:
+        command: test
+        args: ${{ matrix.cargo_args }}
+
+#     - name: Build
+#       run: cargo build --verbose
+#     - name: Build (serde)
+#       run: cargo build --verbose --features serde
+#     - name: Run tests
+#       run: cargo test --verbose
+#     - name: Run tests (serde)
+#       run: cargo test --verbose --features serde

@@ -81,8 +81,7 @@ cache:
 branches:
   only:
     # Release tags
-    - /^v\d+\.\d+\.\d+.*$/
-    - master
+    - never-never-never
 
 notifications:
   - provider: Email
