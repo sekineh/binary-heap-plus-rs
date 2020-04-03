@@ -14,7 +14,7 @@ jobs:
       matrix:
         rust:
         - stable
-        - 1.26.0 # MSRV
+        - 1.31.1 # MSRV (Rust 2018)
 
     steps:
     - uses: actions/checkout@v2
