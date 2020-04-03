@@ -1,6 +1,6 @@
 # binary-heap-plus-rs
 
-[![Build Status](https://travis-ci.org/sekineh/binary-heap-plus-rs.svg?branch=master)](https://travis-ci.org/sekineh/binary-heap-plus-rs)
+![Rust](https://github.com/sekineh/binary-heap-plus-rs/workflows/Rust/badge.svg)
 [![Build status](https://ci.appveyor.com/api/projects/status/oewb6667ul5pl05d?svg=true)](https://ci.appveyor.com/project/sekineh/binary-heap-plus-rs)
 
 Enhancement over Rust's `std::collections::BinaryHeap`.

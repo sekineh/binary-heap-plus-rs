@@ -13,3 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 * Bump MSRV (minimum supported rust version) to rust 1.31.1.
+* Switched to Github actions from travis which are unreliable for linux builds.
