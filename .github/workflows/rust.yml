@@ -38,7 +38,8 @@ jobs:
     - name: Run cargo build w/ serde
       uses: actions-rs/cargo@v1
       with:
-        command: build --features serde
+        command: build
+        args: --features serde
 
     - name: Run cargo test
       uses: actions-rs/cargo@v1
@@ -48,7 +49,8 @@ jobs:
     - name: Run cargo test w/ serde
       uses: actions-rs/cargo@v1
       with:
-        command: test --features serde
+        command: test
+        args: --features serde
 
 #     - name: Build
 #       run: cargo build --verbose
