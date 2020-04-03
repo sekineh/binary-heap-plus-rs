@@ -8,7 +8,6 @@ repository = "https://github.com/sekineh/binary-heap-plus-rs"
 readme = "README.md"
 keywords = ["binary", "heap", "priority", "queue"]
 categories = ["data-structures", "algorithms", ]
-edition = "2018"
 
 [dependencies]
 compare = "0.1.0"
