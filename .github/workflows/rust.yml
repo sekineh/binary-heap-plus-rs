@@ -15,6 +15,9 @@ jobs:
         rust:
         - stable
         - 1.31.1 # MSRV (Rust 2018)
+        cargo_args:
+        - ""
+        - --features serde
 
     steps:
     - uses: actions/checkout@v2
@@ -34,23 +37,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: build
-
-    - name: Run cargo build w/ serde
-      uses: actions-rs/cargo@v1
-      with:
-        command: build
-        args: --features serde
+        args: ${{ matrix.cargo_args }}
 
     - name: Run cargo test
       uses: actions-rs/cargo@v1
       with:
         command: test
-
-    - name: Run cargo test w/ serde
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
-        args: --features serde
+        args: ${{ matrix.cargo_args }}
 
 #     - name: Build
 #       run: cargo build --verbose
