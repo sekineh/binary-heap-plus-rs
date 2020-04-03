@@ -11,7 +11,6 @@
 //! For max heap, `BiaryHeap::from_vec()` is the most versatile way to create a heap.
 //!
 //! ```rust
-//!     extern crate binary_heap_plus; // not needed on Rust 2018
 //!     use binary_heap_plus::*;
 //!
 //!     // max heap
@@ -26,7 +25,6 @@
 //! Min heap is similar, but requires type annotation.
 //! 
 //! ```rust
-//!     extern crate binary_heap_plus; // not needed on Rust 2018
 //!     use binary_heap_plus::*;
 //!
 //!     // min heap
@@ -43,7 +41,6 @@
 //! For custom heap, `BinaryHeap::from_vec_cmp()` works in a similar way to max/min heap. The only difference is that you add the comparator closure with apropriate signature.
 //! 
 //! ```rust
-//!     extern crate binary_heap_plus; // not needed on Rust 2018
 //!     use binary_heap_plus::*;
 //!
 //!     // custom heap: ordered by second value (_.1) of the tuples; min first
@@ -98,12 +95,6 @@
 
 mod binary_heap;
 pub use crate::binary_heap::*;
-extern crate compare;
-extern crate core;
-#[cfg(feature = "serde")]
-extern crate serde;
-#[cfg(all(feature = "serde", test))]
-extern crate serde_json;
 
 /// An intermediate trait for specialization of `Extend`.
 // #[doc(hidden)]
