@@ -7,7 +7,7 @@
 //! # Quick start
 //!
 //! ## Max/Min Heap
-//! 
+//!
 //! For max heap, `BiaryHeap::from_vec()` is the most versatile way to create a heap.
 //!
 //! ```rust
@@ -21,9 +21,9 @@
 //!     let mut h: BinaryHeap<i32> = BinaryHeap::from_vec((0..42).collect());
 //!     assert_eq!(h.pop(), Some(41));
 //! ```
-//! 
+//!
 //! Min heap is similar, but requires type annotation.
-//! 
+//!
 //! ```rust
 //!     use binary_heap_plus::*;
 //!
@@ -37,9 +37,9 @@
 //! ```
 //!
 //! ## Custom Heap
-//! 
+//!
 //! For custom heap, `BinaryHeap::from_vec_cmp()` works in a similar way to max/min heap. The only difference is that you add the comparator closure with apropriate signature.
-//! 
+//!
 //! ```rust
 //!     use binary_heap_plus::*;
 //!
@@ -404,7 +404,6 @@ mod from_liballoc {
             d
         }
     }
-
 }
 
 #[cfg(feature = "serde")]
