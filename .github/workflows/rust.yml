@@ -8,16 +8,20 @@ on:
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
     strategy:
       matrix:
+        os:
+        - ubuntu-latest
+        - windows-latest
+        - macos-latest
         rust:
         - stable
         - 1.31.1 # MSRV (Rust 2018)
         cargo_args:
         - ""
         - --features serde
+
+    runs-on: ${{ matrix.os }}
 
     steps:
     - uses: actions/checkout@v2
