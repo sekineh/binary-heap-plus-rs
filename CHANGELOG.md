@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * Quickstart section in the doc
+* `.into_iter_sorted()` which returns the values in *heap* order. (#13)
+  * Note: `.into_iter()` returns the values in *arbitrary* order. There is a good reason (ex. make `.extend()` efficient) for `std` to do that, it was surprising to some people.
 
 ### Changed
 
