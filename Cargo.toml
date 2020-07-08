@@ -1,6 +1,6 @@
 [package]
 name = "binary-heap-plus"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["SEKINE, Hideki <sekineh@me.com>"]
 description = "Enhanced version of std::collections::BinaryHeap that supports max, min, and custom-order heaps."
 license = "MIT"
@@ -15,7 +15,7 @@ compare = "0.1.0"
 serde = { version = "1.0", optional = true, features = ["derive"] }
 
 [dev-dependencies]
-serde_json = "1.0.39"
+serde_json = "1.0.56"
 
 [badges]
 # TODO: waiting for PR to land...: https://github.com/rust-lang/crates.io/pull/1838#
