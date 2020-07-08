@@ -172,6 +172,14 @@ mod from_liballoc {
     }
 
     #[test]
+    fn test_into_iter_sorted_collect() {
+        let heap = BinaryHeap::from(vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1]);
+        let it = heap.into_iter_sorted();
+        let sorted = it.collect::<Vec<_>>();
+        assert_eq!(sorted, vec![10, 9, 8, 7, 6, 5, 4, 3, 2, 2, 1, 1, 0]);
+    }
+
+    #[test]
     fn test_peek_and_pop() {
         let data = vec![2, 4, 6, 2, 1, 8, 10, 3, 5, 7, 0, 9, 1];
         let mut sorted = data.clone();

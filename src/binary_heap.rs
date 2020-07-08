@@ -616,6 +616,26 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         }
     }
 
+    /// Returns an iterator which retrieves elements in heap order.
+    /// This method consumes the original heap.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::*;
+    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5]);
+    ///
+    /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), vec![5, 4]);
+    /// ```
+    // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
+    pub fn into_iter_sorted(self) -> IntoIterSorted<T, C> {
+        IntoIterSorted {
+            inner: self,
+        }
+    }
+
     /// Returns the greatest item in the binary heap, or `None` if it is empty.
     ///
     /// # Examples
@@ -1284,6 +1304,28 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<T> FusedIterator for IntoIter<T> {}
+
+// #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
+#[derive(Clone, Debug)]
+pub struct IntoIterSorted<T, C: Compare<T>> {
+    inner: BinaryHeap<T, C>,
+}
+
+// #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
+impl<T, C: Compare<T>> Iterator for IntoIterSorted<T, C> {
+    type Item = T;
+
+    #[inline]
+    fn next(&mut self) -> Option<T> {
+        self.inner.pop()
+    }
+
+    #[inline]
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let exact = self.inner.len();
+        (exact, Some(exact))
+    }
+}
 
 /// A draining iterator over the elements of a `BinaryHeap`.
 ///
