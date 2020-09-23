@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+* generic constructor `from_vec_cmp_raw()`.
+
 ## [0.3.0] - 2020-07-08
 
 ### Added
