@@ -394,7 +394,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
-        unsafe { BinaryHeap::from_vec_cmp_rebuild(vec, cmp, true) }
+        unsafe { BinaryHeap::from_vec_cmp_raw(vec, cmp, true) }
     }
 
     /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
@@ -404,7 +404,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// # Safety
     /// User is responsible for providing valid `rebuild` value.
-    pub unsafe fn from_vec_cmp_rebuild(vec: Vec<T>, cmp: C, rebuild: bool) -> Self {
+    pub unsafe fn from_vec_cmp_raw(vec: Vec<T>, cmp: C, rebuild: bool) -> Self {
         let mut heap = BinaryHeap { data: vec, cmp };
         if rebuild && !heap.data.is_empty() {
             heap.rebuild();
