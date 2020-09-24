@@ -607,6 +607,56 @@ where
 }
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
+    /// Replaces the comparator of binary heap.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::*;
+    /// use compare::Compare;
+    /// use std::cmp::Ordering;
+    ///
+    /// struct Comparator {
+    ///     ascending: bool
+    /// }
+    ///
+    /// impl Compare<i32> for Comparator {
+    ///     fn compare(&self,l: &i32,r: &i32) -> Ordering {
+    ///         if self.ascending {
+    ///             r.cmp(l)
+    ///         } else {
+    ///             l.cmp(r)
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// // construct a heap in ascending order.
+    /// let mut heap = BinaryHeap::from_vec_cmp(vec![3, 1, 5], Comparator { ascending: true });
+    ///
+    /// // replace the comparor
+    /// heap.replace_cmp(Comparator { ascending: false });
+    /// assert_eq!(heap.into_iter_sorted().collect::<Vec<_>>(), vec![5, 3, 1]);
+    /// ```
+    #[inline]
+    pub fn replace_cmp(&mut self, cmp: C) {
+        unsafe {
+            self.replace_cmp_raw(cmp, true);
+        }
+    }
+
+    /// Replaces the comparator of binary heap.
+    ///
+    /// # Safety
+    /// User is responsible for providing valid `rebuild` value.
+    pub unsafe fn replace_cmp_raw(&mut self, cmp: C, rebuild: bool) {
+        self.cmp = cmp;
+        if rebuild && !self.data.is_empty() {
+            self.rebuild();
+        }
+    }
+
     /// Returns an iterator visiting all values in the underlying vector, in
     /// arbitrary order.
     ///
