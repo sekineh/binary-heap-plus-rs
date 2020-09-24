@@ -17,6 +17,7 @@ It supports the following heaps and still maintains backward compatibility.
 Other notable added methods are:
 - `BinaryHeap::from_vec_cmp()` and `BinaryHeap::from_vec()` for more generic construction.
 - `.into_iter_sorted()` which is less-surprising version of `.into_iter()`. The implementation is backported from `std`.
+- `.replace_cmp()` which replace the comparator of the existing heap.
 
 ## MSRV (Minimum Supported Rust Version)
 
@@ -34,6 +35,7 @@ https://github.com/sekineh/binary-heap-plus-rs/blob/master/CHANGELOG.md
   - DDOtten, steven099, CAD97, ExpHP, scottmcm, Nemo157 and gnzlbg, thanks for looking into the design!
 - @ulysseB sent me a first pull request!
 - @inesseq contributed feature `serde1`.
+- @davidli2010 contributed comparator update and `unsafe` perf optimazation.
 
 # References
 
