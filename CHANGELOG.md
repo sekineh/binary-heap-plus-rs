@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 * generic constructor `from_vec_cmp_raw()`.
+* `replace_cmp()` which replace the comparator of heap and its unsafe version `replace_cmp_raw()`.
 
 ## [0.3.0] - 2020-07-08
 
