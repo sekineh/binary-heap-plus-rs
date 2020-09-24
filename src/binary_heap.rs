@@ -155,6 +155,7 @@
 //! }
 //! ```
 
+#![allow(clippy::needless_doctest_main)]
 #![allow(missing_docs)]
 // #![stable(feature = "rust1", since = "1.0.0")]
 
