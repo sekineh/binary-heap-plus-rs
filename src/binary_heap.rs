@@ -645,9 +645,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
     pub fn into_iter_sorted(self) -> IntoIterSorted<T, C> {
-        IntoIterSorted {
-            inner: self,
-        }
+        IntoIterSorted { inner: self }
     }
 
     /// Returns the greatest item in the binary heap, or `None` if it is empty.
