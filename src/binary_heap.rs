@@ -335,6 +335,7 @@ impl<'a, T, C: Compare<T>> Deref for PeekMut<'a, T, C> {
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
 impl<'a, T, C: Compare<T>> DerefMut for PeekMut<'a, T, C> {
     fn deref_mut(&mut self) -> &mut T {
+        self.sift = true;
         &mut self.heap.data[0]
     }
 }
@@ -751,7 +752,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         } else {
             Some(PeekMut {
                 heap: self,
-                sift: true,
+                sift: false,
             })
         }
     }
