@@ -21,7 +21,7 @@ Other notable added methods are:
 
 ## MSRV (Minimum Supported Rust Version)
 
-This crate requires Rust 1.31.1 or later.
+This crate requires Rust 1.32.0 or later.
 
 # Changes
 
