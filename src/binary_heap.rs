@@ -1012,17 +1012,17 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         unsafe {
             let mut hole = Hole::new(&mut self.data, pos);
             let mut child = 2 * pos + 1;
-            while child < end {
+            while child < end - 1 {
                 let right = child + 1;
                 // compare with the greater of the two children
-                // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end
-                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
-                {
-                    child = right;
-                }
+                // if !(hole.get(child) > hole.get(right)) { child += 1 }
+                child += (self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater)
+                    as usize;
                 hole.move_to(child);
                 child = 2 * hole.pos() + 1;
+            }
+            if child == end - 1 {
+                hole.move_to(child);
             }
             pos = hole.pos;
         }
