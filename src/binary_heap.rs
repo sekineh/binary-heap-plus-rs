@@ -938,7 +938,14 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         let mut end = self.len();
         while end > 1 {
             end -= 1;
-            self.data.swap(0, end);
+            // SAFETY: `end` goes from `self.len() - 1` to 1 (both included),
+            //  so it's always a valid index to access.
+            //  It is safe to access index 0 (i.e. `ptr`), because
+            //  1 <= end < self.len(), which means self.len() >= 2.
+            unsafe {
+                let ptr = self.data.as_mut_ptr();
+                ptr::swap(ptr, ptr.add(end));
+            }
             self.sift_down_range(0, end);
         }
         self.into_vec()
