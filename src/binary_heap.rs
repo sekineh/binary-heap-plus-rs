@@ -975,22 +975,23 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         unsafe {
             let mut hole = Hole::new(&mut self.data, pos);
             let mut child = 2 * pos + 1;
-            while child < end {
-                let right = child + 1;
+            while child < end - 1 {
                 // compare with the greater of the two children
-                // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end
-                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
-                {
-                    child = right;
-                }
+                // if !(hole.get(child) > hole.get(child + 1)) { child += 1 }
+                child += (self.cmp.compare(hole.get(child), hole.get(child + 1))
+                    != Ordering::Greater) as usize;
                 // if we are already in order, stop.
                 // if hole.element() >= hole.get(child) {
                 if self.cmp.compare(hole.element(), hole.get(child)) != Ordering::Less {
-                    break;
+                    return;
                 }
                 hole.move_to(child);
                 child = 2 * hole.pos() + 1;
+            }
+            if child == end - 1
+                && self.cmp.compare(hole.element(), hole.get(child)) == Ordering::Less
+            {
+                hole.move_to(child);
             }
         }
     }
