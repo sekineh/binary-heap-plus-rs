@@ -938,7 +938,14 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         let mut end = self.len();
         while end > 1 {
             end -= 1;
-            self.data.swap(0, end);
+            // SAFETY: `end` goes from `self.len() - 1` to 1 (both included),
+            //  so it's always a valid index to access.
+            //  It is safe to access index 0 (i.e. `ptr`), because
+            //  1 <= end < self.len(), which means self.len() >= 2.
+            unsafe {
+                let ptr = self.data.as_mut_ptr();
+                ptr::swap(ptr, ptr.add(end));
+            }
             self.sift_down_range(0, end);
         }
         self.into_vec()
@@ -975,22 +982,23 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         unsafe {
             let mut hole = Hole::new(&mut self.data, pos);
             let mut child = 2 * pos + 1;
-            while child < end {
-                let right = child + 1;
+            while child < end - 1 {
                 // compare with the greater of the two children
-                // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end
-                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
-                {
-                    child = right;
-                }
+                // if !(hole.get(child) > hole.get(child + 1)) { child += 1 }
+                child += (self.cmp.compare(hole.get(child), hole.get(child + 1))
+                    != Ordering::Greater) as usize;
                 // if we are already in order, stop.
                 // if hole.element() >= hole.get(child) {
                 if self.cmp.compare(hole.element(), hole.get(child)) != Ordering::Less {
-                    break;
+                    return;
                 }
                 hole.move_to(child);
                 child = 2 * hole.pos() + 1;
+            }
+            if child == end - 1
+                && self.cmp.compare(hole.element(), hole.get(child)) == Ordering::Less
+            {
+                hole.move_to(child);
             }
         }
     }
@@ -1011,17 +1019,17 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         unsafe {
             let mut hole = Hole::new(&mut self.data, pos);
             let mut child = 2 * pos + 1;
-            while child < end {
+            while child < end - 1 {
                 let right = child + 1;
                 // compare with the greater of the two children
-                // if right < end && !(hole.get(child) > hole.get(right)) {
-                if right < end
-                    && self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater
-                {
-                    child = right;
-                }
+                // if !(hole.get(child) > hole.get(right)) { child += 1 }
+                child += (self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater)
+                    as usize;
                 hole.move_to(child);
                 child = 2 * hole.pos() + 1;
+            }
+            if child == end - 1 {
+                hole.move_to(child);
             }
             pos = hole.pos;
         }
