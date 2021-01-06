@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2021-01-06
+
+### Added
+
+* Performance improvement (#28)
+  * Port rust-lang/rust#78857 - Improve BinaryHeap performance
+
 ## [0.4.0] - 2020-09-29
 
 ### Added
