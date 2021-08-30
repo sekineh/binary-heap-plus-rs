@@ -15,6 +15,7 @@ jobs:
         - windows-latest
         - macos-latest
         rust:
+        - nightly
         - stable
         - 1.32.0 # MSRV (Rust 2018 and rand support)
         cargo_args:
@@ -50,10 +51,10 @@ jobs:
         command: test
         args: ${{ matrix.cargo_args }}
 
-    - name: Run cargo test
+    - name: Run cargo bench
       uses: actions-rs/cargo@v1
       with:
-        command: test
+        command: bench
         args: ${{ matrix.cargo_args }}
 
 #     - name: Build
