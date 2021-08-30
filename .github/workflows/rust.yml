@@ -15,12 +15,15 @@ jobs:
         - windows-latest
         - macos-latest
         rust:
-        - nightly
         - stable
         - 1.32.0 # MSRV (Rust 2018 and rand support)
         cargo_args:
         - ""
         - --features serde
+        include:
+          - os: ubuntu-latest
+            rust: nightly
+            cargo_args: ""
 
     runs-on: ${{ matrix.os }}
 
@@ -53,7 +56,7 @@ jobs:
 
     - name: Run cargo bench
       uses: actions-rs/cargo@v1
-      if: ${{ matrix.rust == 'nightly' && matrix.os == 'ubuntu-latest' && matrix.cargo_args == '' }}
+      if: ${{ matrix.rust == 'nightly' }}
       with:
         command: bench
         args: ${{ matrix.cargo_args }}
