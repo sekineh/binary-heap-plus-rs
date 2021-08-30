@@ -53,7 +53,7 @@ jobs:
 
     - name: Run cargo bench
       uses: actions-rs/cargo@v1
-      if: ${{ matrix.rust == 'nightly' }}
+      if: ${{ matrix.rust == 'nightly' && matrix.os == 'ubuntu-latest' && matrix.cargo_args == '' }}
       with:
         command: bench
         args: ${{ matrix.cargo_args }}
