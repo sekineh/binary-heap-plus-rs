@@ -53,6 +53,7 @@ jobs:
 
     - name: Run cargo bench
       uses: actions-rs/cargo@v1
+      if: ${{ matrix.rust == 'nightly' }}
       with:
         command: bench
         args: ${{ matrix.cargo_args }}
