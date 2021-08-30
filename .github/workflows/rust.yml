@@ -20,6 +20,10 @@ jobs:
         cargo_args:
         - ""
         - --features serde
+        include:
+          - os: ubuntu-latest
+            rust: nightly
+            cargo_args: ""
 
     runs-on: ${{ matrix.os }}
 
@@ -48,6 +52,13 @@ jobs:
       uses: actions-rs/cargo@v1
       with:
         command: test
+        args: ${{ matrix.cargo_args }}
+
+    - name: Run cargo bench
+      uses: actions-rs/cargo@v1
+      if: ${{ matrix.rust == 'nightly' }}
+      with:
+        command: bench
         args: ${{ matrix.cargo_args }}
 
 #     - name: Build
