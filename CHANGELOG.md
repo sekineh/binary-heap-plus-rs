@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+* Bump MSRV (minimum supported rust version) to rust 1.36.0.
+
 ## [0.4.1] - 2021-01-06
 
 ### Added
