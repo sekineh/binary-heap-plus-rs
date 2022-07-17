@@ -311,14 +311,14 @@ pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'a, T, C> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'_, T, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("PeekMut").field(&self.heap.data[0]).finish()
     }
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> Drop for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> Drop for PeekMut<'_, T, C> {
     fn drop(&mut self) {
         if self.sift {
             // SAFETY: PeekMut is only instantiated for non-empty heaps.
@@ -328,7 +328,7 @@ impl<'a, T, C: Compare<T>> Drop for PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> Deref for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> Deref for PeekMut<'_, T, C> {
     type Target = T;
     fn deref(&self) -> &T {
         debug_assert!(!self.heap.is_empty());
@@ -338,7 +338,7 @@ impl<'a, T, C: Compare<T>> Deref for PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> DerefMut for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> DerefMut for PeekMut<'_, T, C> {
     fn deref_mut(&mut self) -> &mut T {
         debug_assert!(!self.heap.is_empty());
         self.sift = true;
@@ -382,7 +382,7 @@ impl<T: Ord> Default for BinaryHeap<T> {
 
 // #[stable(feature = "binaryheap_debug", since = "1.4.0")]
 impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
@@ -753,7 +753,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert_eq!(heap.peek(), Some(&2));
     /// ```
     // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-    pub fn peek_mut(&mut self) -> Option<PeekMut<T, C>> {
+    pub fn peek_mut(&mut self) -> Option<PeekMut<'_, T, C>> {
         if self.is_empty() {
             None
         } else {
@@ -1169,7 +1169,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     #[inline]
     // #[stable(feature = "drain", since = "1.6.0")]
-    pub fn drain(&mut self) -> Drain<T> {
+    pub fn drain(&mut self) -> Drain<'_, T> {
         Drain {
             iter: self.data.drain(..),
         }
@@ -1344,7 +1344,7 @@ impl<'a, T> Hole<'a, T> {
     }
 }
 
-impl<'a, T> Drop for Hole<'a, T> {
+impl<T> Drop for Hole<'_, T> {
     #[inline]
     fn drop(&mut self) {
         // fill the hole again
@@ -1368,16 +1368,16 @@ pub struct Iter<'a, T: 'a> {
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Iter").field(&self.iter.as_slice()).finish()
     }
 }
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T> Clone for Iter<'a, T> {
-    fn clone(&self) -> Iter<'a, T> {
+impl<T> Clone for Iter<'_, T> {
+    fn clone(&self) -> Self {
         Iter {
             iter: self.iter.clone(),
         }
@@ -1432,7 +1432,7 @@ pub struct IntoIter<T> {
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("IntoIter")
             .field(&self.iter.as_slice())
             .finish()
@@ -1508,7 +1508,7 @@ pub struct Drain<'a, T: 'a> {
 }
 
 // #[stable(feature = "drain", since = "1.6.0")]
-impl<'a, T: 'a> Iterator for Drain<'a, T> {
+impl<T> Iterator for Drain<'_, T> {
     type Item = T;
 
     #[inline]
@@ -1523,7 +1523,7 @@ impl<'a, T: 'a> Iterator for Drain<'a, T> {
 }
 
 // #[stable(feature = "drain", since = "1.6.0")]
-impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
+impl<T> DoubleEndedIterator for Drain<'_, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
