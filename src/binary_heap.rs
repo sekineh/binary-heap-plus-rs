@@ -440,6 +440,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// assert_eq!(heap.pop(), Some(5));
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
+    #[must_use]
     pub fn new() -> Self {
         BinaryHeap::from_vec(vec![])
     }
@@ -465,6 +466,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// assert_eq!(heap.pop(), Some(5));
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
@@ -487,6 +489,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn new_min() -> Self {
         BinaryHeap::from_vec(vec![])
     }
@@ -511,6 +514,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn with_capacity_min(capacity: usize) -> Self {
         BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
@@ -536,6 +540,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn new_by(f: F) -> Self {
         BinaryHeap::from_vec_cmp(vec![], FnComparator(f))
     }
@@ -560,6 +565,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn with_capacity_by(capacity: usize, f: F) -> Self {
         BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), FnComparator(f))
     }
@@ -585,6 +591,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
+    #[must_use]
     pub fn new_by_key(f: F) -> Self {
         BinaryHeap::from_vec_cmp(vec![], KeyComparator(f))
     }
@@ -609,6 +616,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
+    #[must_use]
     pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
         BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), KeyComparator(f))
     }
@@ -723,6 +731,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert_eq!(heap.peek(), Some(&5));
     ///
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn peek(&self) -> Option<&T> {
         self.data.get(0)
@@ -776,6 +785,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert!(heap.capacity() >= 100);
     /// heap.push(4);
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn capacity(&self) -> usize {
         self.data.capacity()
@@ -921,6 +931,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///     println!("{}", x);
     /// }
     /// ```
+    #[must_use = "`self` will be dropped if the result is not used"]
     // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
     pub fn into_vec(self) -> Vec<T> {
         self.into()
@@ -943,6 +954,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// let vec = heap.into_sorted_vec();
     /// assert_eq!(vec, [1, 2, 3, 4, 5, 6, 7]);
     /// ```
+    #[must_use = "`self` will be dropped if the result is not used"]
     // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
     pub fn into_sorted_vec(mut self) -> Vec<T> {
         let mut end = self.len();
@@ -1119,6 +1131,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// assert_eq!(heap.len(), 2);
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn len(&self) -> usize {
         self.data.len()
@@ -1142,6 +1155,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// assert!(!heap.is_empty());
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
@@ -1362,6 +1376,7 @@ impl<T> Drop for Hole<'_, T> {
 ///
 /// [`iter`]: struct.BinaryHeap.html#method.iter
 /// [`BinaryHeap`]: struct.BinaryHeap.html
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[stable(feature = "rust1", since = "1.0.0")]
 pub struct Iter<'a, T: 'a> {
     iter: slice::Iter<'a, T>,
@@ -1472,6 +1487,7 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<T> FusedIterator for IntoIter<T> {}
 
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
 #[derive(Clone, Debug)]
 pub struct IntoIterSorted<T, C: Compare<T>> {
