@@ -13,11 +13,11 @@
 //! Note: This version is folked from Rust standartd library, which only supports
 //! max heap.
 //!
-//! Insertion and popping the largest element have `O(log n)` time complexity.
-//! Checking the largest element is `O(1)`. Converting a vector to a binary heap
-//! can be done in-place, and has `O(n)` complexity. A binary heap can also be
-//! converted to a sorted vector in-place, allowing it to be used for an `O(n
-//! log n)` in-place heapsort.
+//! Insertion and popping the largest element have *O*(log(*n*)) time complexity.
+//! Checking the largest element is *O*(1). Converting a vector to a binary heap
+//! can be done in-place, and has *O*(*n*) complexity. A binary heap can also be
+//! converted to a sorted vector in-place, allowing it to be used for an *O*(*n* * log(*n*))
+//! in-place heapsort.
 //!
 //! # Examples
 //!
@@ -25,15 +25,16 @@
 //! to solve the [shortest path problem][sssp] on a [directed graph][dir_graph].
 //! It shows how to use [`BinaryHeap`] with custom types.
 //!
-//! [dijkstra]: http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-//! [sssp]: http://en.wikipedia.org/wiki/Shortest_path_problem
-//! [dir_graph]: http://en.wikipedia.org/wiki/Directed_graph
+//! [dijkstra]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+//! [sssp]: https://en.wikipedia.org/wiki/Shortest_path_problem
+//! [dir_graph]: https://en.wikipedia.org/wiki/Directed_graph
 //! [`BinaryHeap`]: struct.BinaryHeap.html
 //!
 //! ```
 //! use std::cmp::Ordering;
-//! use binary_heap_plus::*;
+//! // Only required for Rust versions prior to 1.43.0.
 //! use std::usize;
+//! use binary_heap_plus::BinaryHeap;
 //!
 //! #[derive(Copy, Clone, Eq, PartialEq)]
 //! struct State {
@@ -45,7 +46,7 @@
 //! // Explicitly implement the trait so the queue becomes a min-heap
 //! // instead of a max-heap.
 //! impl Ord for State {
-//!     fn cmp(&self, other: &State) -> Ordering {
+//!     fn cmp(&self, other: &Self) -> Ordering {
 //!         // Notice that the we flip the ordering on costs.
 //!         // In case of a tie we compare positions - this step is necessary
 //!         // to make implementations of `PartialEq` and `Ord` consistent.
@@ -56,12 +57,12 @@
 //!
 //! // `PartialOrd` needs to be implemented as well.
 //! impl PartialOrd for State {
-//!     fn partial_cmp(&self, other: &State) -> Option<Ordering> {
+//!     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 //!         Some(self.cmp(other))
 //!     }
 //! }
 //!
-//! // Each node is represented as an `usize`, for a shorter implementation.
+//! // Each node is represented as a `usize`, for a shorter implementation.
 //! struct Edge {
 //!     node: usize,
 //!     cost: usize,
@@ -188,14 +189,17 @@ use std::vec;
 /// This will be a max-heap.
 ///
 /// It is a logic error for an item to be modified in such a way that the
-/// item's ordering relative to any other item, as determined by the `Ord`
+/// item's ordering relative to any other item, as determined by the [`Ord`]
 /// trait, changes while it is in the heap. This is normally only possible
-/// through `Cell`, `RefCell`, global state, I/O, or unsafe code.
+/// through [`Cell`], [`RefCell`], global state, I/O, or unsafe code. The
+/// behavior resulting from such a logic error is not specified (it
+/// could include panics, incorrect results, aborts, memory leaks, or
+/// non-termination) but will not be undefined behavior.
 ///
 /// # Examples
 ///
 /// ```
-/// use binary_heap_plus::*;
+/// use binary_heap_plus::BinaryHeap;
 ///
 /// // Type inference lets us omit an explicit type signature (which
 /// // would be `BinaryHeap<i32, MaxComparator>` in this example).
@@ -234,6 +238,46 @@ use std::vec;
 /// // The heap should now be empty.
 /// assert!(heap.is_empty())
 /// ```
+///
+/// ## Min-heap
+///
+/// `BinaryHeap` can also act as a min-heap without requiring [`Reverse`] or a custom [`Ord`]
+/// implementation.
+///
+/// ```
+/// use binary_heap_plus::BinaryHeap;
+///
+/// let mut heap = BinaryHeap::new_min();
+///
+/// // There is no need to wrap values in `Reverse`
+/// heap.push(1);
+/// heap.push(5);
+/// heap.push(2);
+///
+/// // If we pop these scores now, they should come back in the reverse order.
+/// assert_eq!(heap.pop(), Some(1));
+/// assert_eq!(heap.pop(), Some(2));
+/// assert_eq!(heap.pop(), Some(5));
+/// assert_eq!(heap.pop(), None);
+/// ```
+///
+/// # Time complexity
+///
+/// | [push]  | [pop]         | [peek]/[peek\_mut] |
+/// |---------|---------------|--------------------|
+/// | *O*(1)~ | *O*(log(*n*)) | *O*(1)             |
+///
+/// The value for `push` is an expected cost; the method documentation gives a
+/// more detailed analysis.
+///
+/// [`Reverse`]: https://doc.rust-lang.org/stable/core/cmp/struct.Reverse.html
+/// [`Ord`]: https://doc.rust-lang.org/stable/core/cmp/trait.Ord.html
+/// [`Cell`]: https://doc.rust-lang.org/stable/core/cell/struct.Cell.html
+/// [`RefCell`]: https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html
+/// [push]: #method.push
+/// [pop]: #method.pop
+/// [peek]: #method.peek
+/// [peek\_mut]: #method.peek_mut
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryHeap<T, C = MaxComparator>
@@ -432,7 +476,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.push(3);
     /// heap.push(1);
@@ -457,7 +501,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity(10);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -482,7 +526,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_min();
     /// heap.push(3);
     /// heap.push(1);
@@ -506,7 +550,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_min(10);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -533,7 +577,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_by(|a: &i32, b: &i32| b.cmp(a));
     /// heap.push(3);
     /// heap.push(1);
@@ -557,7 +601,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_by(10, |a: &i32, b: &i32| b.cmp(a));
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -584,7 +628,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_by_key(|a: &i32| a % 4);
     /// heap.push(3);
     /// heap.push(1);
@@ -608,7 +652,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_by_key(10, |a: &i32| a % 4);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -630,7 +674,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// use compare::Compare;
     /// use std::cmp::Ordering;
     ///
@@ -681,7 +725,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
@@ -704,7 +748,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5]);
     ///
     /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), vec![5, 4]);
@@ -721,7 +765,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// assert_eq!(heap.peek(), None);
     ///
@@ -731,6 +775,10 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert_eq!(heap.peek(), Some(&5));
     ///
     /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// Cost is *O*(1) in the worst case.
     #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn peek(&self) -> Option<&T> {
@@ -748,7 +796,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// assert!(heap.peek_mut().is_none());
     ///
@@ -761,6 +809,11 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// }
     /// assert_eq!(heap.peek(), Some(&2));
     /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// If the item is modified then the worst case time complexity is *O*(log(*n*)),
+    /// otherwise it's *O*(1).
     // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
     pub fn peek_mut(&mut self) -> Option<PeekMut<'_, T, C>> {
         if self.is_empty() {
@@ -780,7 +833,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity(100);
     /// assert!(heap.capacity() >= 100);
     /// heap.push(4);
@@ -807,7 +860,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve_exact(100);
     /// assert!(heap.capacity() >= 100);
@@ -832,7 +885,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve(100);
     /// assert!(heap.capacity() >= 100);
@@ -850,7 +903,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity(100);
     ///
     /// assert!(heap.capacity() >= 100);
@@ -870,13 +923,17 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert_eq!(heap.pop(), Some(3));
     /// assert_eq!(heap.pop(), Some(1));
     /// assert_eq!(heap.pop(), None);
     /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// The worst case cost of `pop` on a heap containing *n* elements is *O*(log(*n*)).
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn pop(&mut self) -> Option<T> {
         self.data.pop().map(|mut item| {
@@ -896,7 +953,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.push(3);
     /// heap.push(5);
@@ -905,6 +962,22 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert_eq!(heap.len(), 3);
     /// assert_eq!(heap.peek(), Some(&5));
     /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// The expected cost of `push`, averaged over every possible ordering of
+    /// the elements being pushed, and over a sufficiently large number of
+    /// pushes, is *O*(1). This is the most meaningful cost metric when pushing
+    /// elements that are *not* already in any sorted pattern.
+    ///
+    /// The time complexity degrades if elements are pushed in predominantly
+    /// ascending order. In the worst case, elements are pushed in ascending
+    /// sorted order and the amortized cost per push is *O*(log(*n*)) against a heap
+    /// containing *n* elements.
+    ///
+    /// The worst case cost of a *single* call to `push` is *O*(*n*). The worst case
+    /// occurs when capacity is exhausted and needs a resize. The resize cost
+    /// has been amortized in the previous figures.
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn push(&mut self, item: T) {
         let old_len = self.len();
@@ -922,7 +995,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5, 6, 7]);
     /// let vec = heap.into_vec();
     ///
@@ -945,7 +1018,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     ///
     /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
     /// heap.push(6);
@@ -1126,7 +1199,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert_eq!(heap.len(), 2);
@@ -1144,7 +1217,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     ///
     /// assert!(heap.is_empty());
@@ -1161,16 +1234,19 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         self.len() == 0
     }
 
-    /// Clears the binary heap, returning an iterator over the removed elements.
+    /// Clears the binary heap, returning an iterator over the removed elements
+    /// in arbitrary order. If the iterator is dropped before being fully
+    /// consumed, it drops the remaining elements in arbitrary order.
     ///
-    /// The elements are removed in arbitrary order.
+    /// The returned iterator keeps a mutable borrow on the heap to optimize
+    /// its implementation.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -1196,7 +1272,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -1267,7 +1343,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     ///
     /// let v = vec![-10, 1, 2, 3, 3];
     /// let mut a = BinaryHeap::from(v);
@@ -1294,7 +1370,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     }
 }
 
-/// Hole represents a hole in a slice i.e. an index without valid value
+/// Hole represents a hole in a slice i.e., an index without valid value
 /// (because it was moved from or duplicated).
 /// In drop, `Hole` will restore the slice by filling the hole
 /// position with the value that was originally removed.
@@ -1305,7 +1381,7 @@ struct Hole<'a, T: 'a> {
 }
 
 impl<'a, T> Hole<'a, T> {
-    /// Create a new Hole at index `pos`.
+    /// Create a new `Hole` at index `pos`.
     ///
     /// Unsafe because pos must be within the data slice.
     #[inline]
@@ -1371,11 +1447,10 @@ impl<T> Drop for Hole<'_, T> {
 
 /// An iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`iter`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by [`BinaryHeap::iter()`]. See its
 /// documentation for more.
 ///
-/// [`iter`]: struct.BinaryHeap.html#method.iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`BinaryHeap::iter()`]: struct.BinaryHeap.html#method.iter
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[stable(feature = "rust1", since = "1.0.0")]
 pub struct Iter<'a, T: 'a> {
@@ -1439,11 +1514,11 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 /// An owning iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`into_iter`] method on [`BinaryHeap`][`BinaryHeap`]
-/// (provided by the `IntoIterator` trait). See its documentation for more.
+/// This `struct` is created by [`BinaryHeap::into_iter()`]
+/// (provided by the [`IntoIterator`] trait). See its documentation for more.
 ///
-/// [`into_iter`]: struct.BinaryHeap.html#method.into_iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`BinaryHeap::into_iter()`]: struct.BinaryHeap.html#method.into_iter
+/// [`IntoIterator`]: https://doc.rust-lang.org/stable/core/iter/trait.IntoIterator.html
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[derive(Clone)]
 pub struct IntoIter<T> {
@@ -1481,7 +1556,6 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         self.iter.next_back()
     }
 }
-
 // #[stable(feature = "rust1", since = "1.0.0")]
 // impl<T> ExactSizeIterator for IntoIter<T> {
 //     fn is_empty(&self) -> bool {
@@ -1517,11 +1591,10 @@ impl<T, C: Compare<T>> Iterator for IntoIterSorted<T, C> {
 
 /// A draining iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`drain`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by [`BinaryHeap::drain()`]. See its
 /// documentation for more.
 ///
-/// [`drain`]: struct.BinaryHeap.html#method.drain
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`BinaryHeap::drain()`]: struct.BinaryHeap.html#method.drain
 // #[stable(feature = "drain", since = "1.6.0")]
 // #[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
@@ -1563,7 +1636,9 @@ impl<T> DoubleEndedIterator for Drain<'_, T> {
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
 impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
-    /// creates a max heap from a vec
+    /// Converts a `Vec<T>` into a `BinaryHeap<T>`.
+    ///
+    /// This conversion happens in-place, and has *O*(*n*) time complexity.
     fn from(vec: Vec<T>) -> Self {
         BinaryHeap::from_vec(vec)
     }
@@ -1577,6 +1652,10 @@ impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
 // }
 
 impl<T, C: Compare<T>> Into<Vec<T>> for BinaryHeap<T, C> {
+    /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
+    ///
+    /// This conversion requires no data movement or allocation, and has
+    /// constant time complexity.
     fn into(self) -> Vec<T> {
         self.data
     }
@@ -1603,7 +1682,7 @@ impl<T, C: Compare<T>> IntoIterator for BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
