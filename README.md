@@ -2,7 +2,8 @@
 
 ![Rust](https://github.com/sekineh/binary-heap-plus-rs/workflows/Rust/badge.svg)
 
-Enhancement over Rust's `std::collections::BinaryHeap`.
+Enhancement over Rust's
+[`std::collections::BinaryHeap`](https://doc.rust-lang.org/stable/std/collections/struct.BinaryHeap.html).
 
 It supports the following heaps and still maintains backward compatibility.
 - Max heap
@@ -25,8 +26,8 @@ This crate requires Rust 1.36.0 or later.
 
 # Changes
 
-See CHANGELOG.md.
-https://github.com/sekineh/binary-heap-plus-rs/blob/master/CHANGELOG.md
+See
+[CHANGELOG.md](https://github.com/sekineh/binary-heap-plus-rs/blob/master/CHANGELOG.md).
 
 # Thanks
 

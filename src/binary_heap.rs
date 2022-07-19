@@ -432,31 +432,37 @@ impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
 }
 
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from `Vec`.
+    /// Generic constructor for `BinaryHeap` from [`Vec`].
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub fn from_vec(vec: Vec<T>) -> Self {
         BinaryHeap::from_vec_cmp(vec, C::default())
     }
 }
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
         unsafe { BinaryHeap::from_vec_cmp_raw(vec, cmp, true) }
     }
 
-    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
     ///
     /// # Safety
     /// User is responsible for providing valid `rebuild` value.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub unsafe fn from_vec_cmp_raw(vec: Vec<T>, cmp: C, rebuild: bool) -> Self {
         let mut heap = BinaryHeap { data: vec, cmp };
         if rebuild && !heap.data.is_empty() {
