@@ -1081,8 +1081,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
             //  it's a valid index and also != hole.pos().
             if self
                 .cmp
-                .compare(hole.element(), unsafe { hole.get(parent) })
-                != Ordering::Greater
+                .compares_le(hole.element(), unsafe { hole.get(parent) })
             {
                 break;
             }
@@ -1114,14 +1113,15 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
             //  child + 1 == 2 * hole.pos() + 2 != hole.pos().
             // FIXME: 2 * hole.pos() + 1 or 2 * hole.pos() + 2 could overflow
             //  if T is a ZST
-            child += unsafe {
-                self.cmp.compare(hole.get(child), hole.get(child + 1)) != Ordering::Greater
-            } as usize;
+            child += unsafe { self.cmp.compares_le(hole.get(child), hole.get(child + 1)) } as usize;
 
             // if we are already in order, stop.
             // SAFETY: child is now either the old child or the old child+1
             //  We already proven that both are < self.len() and != hole.pos()
-            if self.cmp.compare(hole.element(), unsafe { hole.get(child) }) != Ordering::Less {
+            if self
+                .cmp
+                .compares_ge(hole.element(), unsafe { hole.get(child) })
+            {
                 return;
             }
 
@@ -1133,7 +1133,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         // SAFETY: && short circuit, which means that in the
         //  second condition it's already true that child == end - 1 < self.len().
         if child == end - 1
-            && self.cmp.compare(hole.element(), unsafe { hole.get(child) }) == Ordering::Less
+            && self
+                .cmp
+                .compares_lt(hole.element(), unsafe { hole.get(child) })
         {
             // SAFETY: child is already proven to be a valid index and
             //  child == 2 * hole.pos() + 1 != hole.pos().
@@ -1176,9 +1178,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
             //  child + 1 == 2 * hole.pos() + 2 != hole.pos().
             // FIXME: 2 * hole.pos() + 1 or 2 * hole.pos() + 2 could overflow
             //  if T is a ZST
-            child += unsafe {
-                self.cmp.compare(hole.get(child), hole.get(child + 1)) != Ordering::Greater
-            } as usize;
+            child += unsafe { self.cmp.compares_le(hole.get(child), hole.get(child + 1)) } as usize;
 
             // SAFETY: Same as above
             unsafe { hole.move_to(child) };
