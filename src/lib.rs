@@ -430,6 +430,93 @@ mod from_liballoc {
             d
         }
     }
+
+    // old binaryheap failed this test
+    //
+    // Integrity means that all elements are present after a comparison panics,
+    // even if the order might not be correct.
+    //
+    // Destructors must be called exactly once per element.
+    // FIXME: re-enable emscripten once it can unwind again
+    #[test]
+    #[cfg(not(target_os = "emscripten"))]
+    fn panic_safe() {
+        use std::cmp;
+        use std::panic::{self, AssertUnwindSafe};
+        use std::sync::atomic::{AtomicUsize, Ordering};
+
+        use rand::{seq::SliceRandom, thread_rng};
+
+        static DROP_COUNTER: AtomicUsize = AtomicUsize::new(0);
+
+        #[derive(Eq, PartialEq, PartialOrd, Clone, Debug)]
+        struct PanicOrd<T>(T, bool);
+
+        impl<T> Drop for PanicOrd<T> {
+            fn drop(&mut self) {
+                // update global drop count
+                DROP_COUNTER.fetch_add(1, Ordering::SeqCst);
+            }
+        }
+
+        impl<T: Ord> Ord for PanicOrd<T> {
+            fn cmp(&self, other: &Self) -> cmp::Ordering {
+                if self.1 || other.1 {
+                    panic!("Panicking comparison");
+                }
+                self.0.cmp(&other.0)
+            }
+        }
+        let mut rng = thread_rng();
+        const DATASZ: usize = 32;
+        // Miri is too slow
+        let ntest = if cfg!(miri) { 1 } else { 10 };
+
+        // don't use 0 in the data -- we want to catch the zeroed-out case.
+        let data = (1..=DATASZ).collect::<Vec<_>>();
+
+        // since it's a fuzzy test, run several tries.
+        for _ in 0..ntest {
+            for i in 1..=DATASZ {
+                DROP_COUNTER.store(0, Ordering::SeqCst);
+
+                let mut panic_ords: Vec<_> = data
+                    .iter()
+                    .filter(|&&x| x != i)
+                    .map(|&x| PanicOrd(x, false))
+                    .collect();
+                let panic_item = PanicOrd(i, true);
+
+                // heapify the sane items
+                panic_ords.shuffle(&mut rng);
+                let mut heap = BinaryHeap::from(panic_ords);
+                let inner_data;
+
+                {
+                    // push the panicking item to the heap and catch the panic
+                    let thread_result = {
+                        let mut heap_ref = AssertUnwindSafe(&mut heap);
+                        panic::catch_unwind(move || {
+                            heap_ref.push(panic_item);
+                        })
+                    };
+                    assert!(thread_result.is_err());
+
+                    // Assert no elements were dropped
+                    let drops = DROP_COUNTER.load(Ordering::SeqCst);
+                    assert!(drops == 0, "Must not drop items. drops={}", drops);
+                    inner_data = heap.clone().into_vec();
+                    drop(heap);
+                }
+                let drops = DROP_COUNTER.load(Ordering::SeqCst);
+                assert_eq!(drops, DATASZ);
+
+                let mut data_sorted = inner_data.into_iter().map(|p| p.0).collect::<Vec<_>>();
+                data_sorted.sort();
+                assert_eq!(data_sorted, data);
+            }
+        }
+    }
 }
 
 #[cfg(feature = "serde")]
