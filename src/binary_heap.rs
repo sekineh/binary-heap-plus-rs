@@ -155,7 +155,8 @@
 //! }
 //! ```
 
-#![deny(unsafe_op_in_unsafe_fn)]
+#![cfg_attr(has_rustc_1_52, deny(unsafe_op_in_unsafe_fn))]
+#![cfg_attr(not(has_rustc_1_52), allow(unused_unsafe))]
 #![allow(clippy::needless_doctest_main)]
 #![allow(missing_docs)]
 // #![stable(feature = "rust1", since = "1.0.0")]
