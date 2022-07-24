@@ -1196,6 +1196,45 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         self.drain();
     }
 
+    /// Rebuild assuming data[0..start] is still a proper heap.
+    fn rebuild_tail(&mut self, start: usize) {
+        if start == self.len() {
+            return;
+        }
+
+        let tail_len = self.len() - start;
+
+        // `usize::BITS` requires Rust 1.53.0 or greater.
+        #[allow(clippy::manual_bits)]
+        #[inline(always)]
+        fn log2_fast(x: usize) -> usize {
+            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
+        }
+
+        // `rebuild` takes O(self.len()) operations
+        // and about 2 * self.len() comparisons in the worst case
+        // while repeating `sift_up` takes O(tail_len * log(start)) operations
+        // and about 1 * tail_len * log_2(start) comparisons in the worst case,
+        // assuming start >= tail_len. For larger heaps, the crossover point
+        // no longer follows this reasoning and was determined empirically.
+        let better_to_rebuild = if start < tail_len {
+            true
+        } else if self.len() <= 2048 {
+            2 * self.len() < tail_len * log2_fast(start)
+        } else {
+            2 * self.len() < tail_len * 11
+        };
+
+        if better_to_rebuild {
+            self.rebuild();
+        } else {
+            for i in start..self.len() {
+                // SAFETY: The index `i` is always less than self.len().
+                unsafe { self.sift_up(0, i) };
+            }
+        }
+    }
+
     fn rebuild(&mut self) {
         let mut n = self.len() / 2;
         while n > 0 {
@@ -1233,31 +1272,11 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
             swap(self, other);
         }
 
-        if other.is_empty() {
-            return;
-        }
+        let start = self.data.len();
 
-        #[inline(always)]
-        fn log2_fast(x: usize) -> usize {
-            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
-        }
+        self.data.append(&mut other.data);
 
-        // `rebuild` takes O(len1 + len2) operations
-        // and about 2 * (len1 + len2) comparisons in the worst case
-        // while `extend` takes O(len2 * log_2(len1)) operations
-        // and about 1 * len2 * log_2(len1) comparisons in the worst case,
-        // assuming len1 >= len2.
-        #[inline]
-        fn better_to_rebuild(len1: usize, len2: usize) -> bool {
-            2 * (len1 + len2) < len2 * log2_fast(len1)
-        }
-
-        if better_to_rebuild(self.len(), other.len()) {
-            self.data.append(&mut other.data);
-            self.rebuild();
-        } else {
-            self.extend(other.drain());
-        }
+        self.rebuild_tail(start);
     }
 }
 
