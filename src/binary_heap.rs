@@ -911,6 +911,33 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         self.data.shrink_to_fit();
     }
 
+    /// Discards capacity with a lower bound.
+    ///
+    /// The capacity will remain at least as large as both the length
+    /// and the supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::collections::BinaryHeap;
+    /// let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity(100);
+    ///
+    /// assert!(heap.capacity() >= 100);
+    /// heap.shrink_to(10);
+    /// assert!(heap.capacity() >= 10);
+    /// ```
+    ///
+    /// # Compatibility
+    ///
+    /// This feature requires Rust 1.56.0 or greater.
+    #[inline]
+    #[cfg(rustc_1_56)]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.data.shrink_to(min_capacity)
+    }
+
     /// Removes the greatest item from the binary heap and returns it, or `None` if it
     /// is empty.
     ///
