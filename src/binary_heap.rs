@@ -1667,13 +1667,22 @@ impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
     }
 }
 
-// #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-// impl<T, C: Compare<T>> From<BinaryHeap<T, C>> for Vec<T> {
-//     fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
-//         heap.data
-//     }
-// }
+/// # Compatibility
+///
+/// This trait is only implemented for Rust 1.41.0 or greater.  For earlier versions, `Into<Vec<T>>`
+/// is implemented for `BinaryHeap<T, C>` instead.
+#[cfg(rustc_1_41)]
+impl<T, C: Compare<T>> From<BinaryHeap<T, C>> for Vec<T> {
+    /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
+    ///
+    /// This conversion requires no data movement or allocation, and has
+    /// constant time complexity.
+    fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
+        heap.data
+    }
+}
 
+#[cfg(not(rustc_1_41))]
 impl<T, C: Compare<T>> Into<Vec<T>> for BinaryHeap<T, C> {
     /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
     ///
