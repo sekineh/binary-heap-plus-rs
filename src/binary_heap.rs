@@ -1668,6 +1668,25 @@ impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
 
 /// # Compatibility
 ///
+/// This trait is only implemented for Rust 1.56.0 or greater.
+#[cfg(rustc_1_56)]
+impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    ///
+    /// let mut h1 = BinaryHeap::from([1, 4, 2, 3]);
+    /// let mut h2: BinaryHeap<_> = [1, 4, 2, 3].into();
+    /// while let Some((a, b)) = h1.pop().zip(h2.pop()) {
+    ///     assert_eq!(a, b);
+    /// }
+    /// ```
+    fn from(arr: [T; N]) -> Self {
+        Self::from_iter(arr)
+    }
+}
+
+/// # Compatibility
+///
 /// This trait is only implemented for Rust 1.41.0 or greater.  For earlier versions, `Into<Vec<T>>`
 /// is implemented for `BinaryHeap<T, C>` instead.
 #[cfg(rustc_1_41)]
