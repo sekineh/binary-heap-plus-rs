@@ -20,9 +20,15 @@ Other notable added methods are:
 - `.into_iter_sorted()` which is less-surprising version of `.into_iter()`. The implementation is backported from `std`.
 - `.replace_cmp()` which replace the comparator of the existing heap.
 
-## MSRV (Minimum Supported Rust Version)
+## Compatibility and MSRV (Minimum Supported Rust Version)
 
-This crate requires Rust 1.36.0 or later.
+This crate is based on the standard library's implementation of
+[`BinaryHeap`](https://doc.rust-lang.org/stable/std/collections/struct.BinaryHeap.html)
+from Rust 1.62.0.
+
+This crate requires Rust 1.36.0 or later.  A few of its APIs are only available
+for more recent versions of Rust where they have been stabilized in the
+standard library; see the documentation for specifics.
 
 # Changes
 
