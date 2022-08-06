@@ -1064,11 +1064,8 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
     ///
-    /// let v = vec![-10, 1, 2, 3, 3];
-    /// let mut a = BinaryHeap::from(v);
-    ///
-    /// let v = vec![-20, 5, 43];
-    /// let mut b = BinaryHeap::from(v);
+    /// let mut a = BinaryHeap::from(vec![-10, 1, 2, 3, 3]);
+    /// let mut b = BinaryHeap::from(vec![-20, 5, 43]);
     ///
     /// a.append(&mut b);
     ///
