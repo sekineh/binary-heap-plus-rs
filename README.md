@@ -35,7 +35,7 @@ https://github.com/sekineh/binary-heap-plus-rs/blob/master/CHANGELOG.md
   - DDOtten, steven099, CAD97, ExpHP, scottmcm, Nemo157 and gnzlbg, thanks for looking into the design!
 - @ulysseB sent me a first pull request!
 - @inesseq contributed feature `serde1`.
-- @davidli2010 contributed comparator update and `unsafe` perf optimazation.
+- @davidli2010 contributed comparator update and `unsafe` perf optimization.
 
 # References
 
