@@ -18,7 +18,6 @@
 //! [dijkstra]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
 //! [sssp]: https://en.wikipedia.org/wiki/Shortest_path_problem
 //! [dir_graph]: https://en.wikipedia.org/wiki/Directed_graph
-//! [`BinaryHeap`]: struct.BinaryHeap.html
 //!
 //! ```
 //! use std::cmp::Ordering;
@@ -146,8 +145,7 @@
 //! }
 //! ```
 
-#![cfg_attr(rustc_1_52, deny(unsafe_op_in_unsafe_fn))]
-#![cfg_attr(not(rustc_1_52), allow(unused_unsafe))]
+#![deny(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::needless_doctest_main)]
 #![allow(missing_docs)]
 // #![stable(feature = "rust1", since = "1.0.0")]
@@ -264,10 +262,10 @@ use std::vec;
 /// [`Ord`]: https://doc.rust-lang.org/stable/core/cmp/trait.Ord.html
 /// [`Cell`]: https://doc.rust-lang.org/stable/core/cell/struct.Cell.html
 /// [`RefCell`]: https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html
-/// [push]: #method.push
-/// [pop]: #method.pop
-/// [peek]: #method.peek
-/// [peek\_mut]: #method.peek_mut
+/// [push]: BinaryHeap::push
+/// [pop]: BinaryHeap::pop
+/// [peek]: BinaryHeap::peek
+/// [peek\_mut]: BinaryHeap::peek_mut
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BinaryHeap<T, C = MaxComparator> {
@@ -333,8 +331,7 @@ where
 /// This `struct` is created by the [`peek_mut`] method on [`BinaryHeap`]. See
 /// its documentation for more.
 ///
-/// [`peek_mut`]: struct.BinaryHeap.html#method.peek_mut
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`peek_mut`]: BinaryHeap::peek_mut
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
 pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
     heap: &'a mut BinaryHeap<T, C>,
@@ -1196,7 +1193,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// heap.push(4);
     /// ```
     ///
-    /// [`reserve`]: #method.reserve
+    /// [`reserve`]: BinaryHeap::reserve
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.data.reserve_exact(additional);
@@ -1468,8 +1465,6 @@ impl<T> Drop for Hole<'_, T> {
 ///
 /// This `struct` is created by [`BinaryHeap::iter()`]. See its
 /// documentation for more.
-///
-/// [`BinaryHeap::iter()`]: struct.BinaryHeap.html#method.iter
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[stable(feature = "rust1", since = "1.0.0")]
 pub struct Iter<'a, T: 'a> {
@@ -1536,7 +1531,6 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 /// This `struct` is created by [`BinaryHeap::into_iter()`]
 /// (provided by the [`IntoIterator`] trait). See its documentation for more.
 ///
-/// [`BinaryHeap::into_iter()`]: struct.BinaryHeap.html#method.into_iter
 /// [`IntoIterator`]: https://doc.rust-lang.org/stable/core/iter/trait.IntoIterator.html
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[derive(Clone)]
@@ -1612,8 +1606,6 @@ impl<T, C: Compare<T>> Iterator for IntoIterSorted<T, C> {
 ///
 /// This `struct` is created by [`BinaryHeap::drain()`]. See its
 /// documentation for more.
-///
-/// [`BinaryHeap::drain()`]: struct.BinaryHeap.html#method.drain
 // #[stable(feature = "drain", since = "1.6.0")]
 #[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
@@ -1682,11 +1674,6 @@ impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
     }
 }
 
-/// # Compatibility
-///
-/// This trait is only implemented for Rust 1.41.0 or greater.  For earlier versions, `Into<Vec<T>>`
-/// is implemented for `BinaryHeap<T, C>` instead.
-#[cfg(rustc_1_41)]
 impl<T, C> From<BinaryHeap<T, C>> for Vec<T> {
     /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
     ///
@@ -1694,17 +1681,6 @@ impl<T, C> From<BinaryHeap<T, C>> for Vec<T> {
     /// constant time complexity.
     fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
         heap.data
-    }
-}
-
-#[cfg(not(rustc_1_41))]
-impl<T, C> Into<Vec<T>> for BinaryHeap<T, C> {
-    /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
-    ///
-    /// This conversion requires no data movement or allocation, and has
-    /// constant time complexity.
-    fn into(self) -> Vec<T> {
-        self.data
     }
 }
 
