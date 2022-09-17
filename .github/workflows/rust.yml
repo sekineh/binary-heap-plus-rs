@@ -21,8 +21,19 @@ jobs:
         - ""
         - --features serde
         include:
+          # Also test on nightly and Rust versions between MSRV and stable
+          # where there is conditional compilation
           - os: ubuntu-latest
             rust: nightly
+            cargo_args: ""
+          - os: ubuntu-latest
+            rust: 1.41.0
+            cargo_args: ""
+          - os: ubuntu-latest
+            rust: 1.52.0
+            cargo_args: ""
+          - os: ubuntu-latest
+            rust: 1.56.0
             cargo_args: ""
 
     runs-on: ${{ matrix.os }}
