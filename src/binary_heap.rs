@@ -225,6 +225,15 @@ use std::vec;
 /// assert!(heap.is_empty())
 /// ```
 ///
+/// A `BinaryHeap` with a known list of items can be initialized from an array:
+///
+/// ```
+/// use binary_heap_plus::BinaryHeap;
+///
+/// // This will create a max-heap.
+/// let heap = BinaryHeap::from([1, 5, 2]);
+/// ```
+///
 /// ## Min-heap
 ///
 /// `BinaryHeap` can also act as a min-heap without requiring [`Reverse`] or a custom [`Ord`]
@@ -685,7 +694,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// // replace the comparor
     /// heap.replace_cmp(Comparator { ascending: false });
-    /// assert_eq!(heap.into_iter_sorted().collect::<Vec<_>>(), vec![5, 3, 1]);
+    /// assert_eq!(heap.into_iter_sorted().collect::<Vec<_>>(), [5, 3, 1]);
     /// ```
     #[inline]
     pub fn replace_cmp(&mut self, cmp: C) {
@@ -755,7 +764,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert_eq!(heap.pop(), Some(3));
     /// assert_eq!(heap.pop(), Some(1));
@@ -828,7 +837,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
     ///
-    /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
+    /// let mut heap = BinaryHeap::from([1, 2, 4, 5, 7]);
     /// heap.push(6);
     /// heap.push(3);
     ///
@@ -1057,8 +1066,8 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
     ///
-    /// let mut a = BinaryHeap::from(vec![-10, 1, 2, 3, 3]);
-    /// let mut b = BinaryHeap::from(vec![-20, 5, 43]);
+    /// let mut a = BinaryHeap::from([-10, 1, 2, 3, 3]);
+    /// let mut b = BinaryHeap::from([-20, 5, 43]);
     ///
     /// a.append(&mut b);
     ///
@@ -1089,7 +1098,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
     /// for x in heap.iter() {
@@ -1112,9 +1121,9 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4, 5]);
     ///
-    /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), vec![5, 4]);
+    /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), [5, 4]);
     /// ```
     // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
     pub fn into_iter_sorted(self) -> IntoIterSorted<T, C> {
@@ -1268,7 +1277,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5, 6, 7]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4, 5, 6, 7]);
     /// let vec = heap.into_vec();
     ///
     /// // Will print in some order
@@ -1290,7 +1299,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 3]);
+    /// let heap = BinaryHeap::from([1, 3]);
     ///
     /// assert_eq!(heap.len(), 2);
     /// ```
@@ -1337,7 +1346,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert!(!heap.is_empty());
     ///
@@ -1363,7 +1372,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert!(!heap.is_empty());
     ///
@@ -1693,7 +1702,7 @@ impl<T, C> IntoIterator for BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
     /// for x in heap.into_iter() {
