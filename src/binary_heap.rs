@@ -1,23 +1,13 @@
-// Copyright 2013-2014 The Rust Project Developers. See the COPYRIGHT
-// file at the top-level directory of this distribution and at
-// http://rust-lang.org/COPYRIGHT.
-//
-// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
-// http://www.apache.org/licenses/LICENSE-2.0> or the MIT license
-// <LICENSE-MIT or http://opensource.org/licenses/MIT>, at your
-// option. This file may not be copied, modified, or distributed
-// except according to those terms.
-
 //! A priority queue implemented with a binary heap.
 //!
 //! Note: This version is folked from Rust standartd library, which only supports
 //! max heap.
 //!
-//! Insertion and popping the largest element have `O(log n)` time complexity.
-//! Checking the largest element is `O(1)`. Converting a vector to a binary heap
-//! can be done in-place, and has `O(n)` complexity. A binary heap can also be
-//! converted to a sorted vector in-place, allowing it to be used for an `O(n
-//! log n)` in-place heapsort.
+//! Insertion and popping the largest element have *O*(log(*n*)) time complexity.
+//! Checking the largest element is *O*(1). Converting a vector to a binary heap
+//! can be done in-place, and has *O*(*n*) complexity. A binary heap can also be
+//! converted to a sorted vector in-place, allowing it to be used for an *O*(*n* * log(*n*))
+//! in-place heapsort.
 //!
 //! # Examples
 //!
@@ -25,15 +15,15 @@
 //! to solve the [shortest path problem][sssp] on a [directed graph][dir_graph].
 //! It shows how to use [`BinaryHeap`] with custom types.
 //!
-//! [dijkstra]: http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-//! [sssp]: http://en.wikipedia.org/wiki/Shortest_path_problem
-//! [dir_graph]: http://en.wikipedia.org/wiki/Directed_graph
-//! [`BinaryHeap`]: struct.BinaryHeap.html
+//! [dijkstra]: https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
+//! [sssp]: https://en.wikipedia.org/wiki/Shortest_path_problem
+//! [dir_graph]: https://en.wikipedia.org/wiki/Directed_graph
 //!
 //! ```
 //! use std::cmp::Ordering;
-//! use binary_heap_plus::*;
+//! // Only required for Rust versions prior to 1.43.0.
 //! use std::usize;
+//! use binary_heap_plus::BinaryHeap;
 //!
 //! #[derive(Copy, Clone, Eq, PartialEq)]
 //! struct State {
@@ -45,7 +35,7 @@
 //! // Explicitly implement the trait so the queue becomes a min-heap
 //! // instead of a max-heap.
 //! impl Ord for State {
-//!     fn cmp(&self, other: &State) -> Ordering {
+//!     fn cmp(&self, other: &Self) -> Ordering {
 //!         // Notice that the we flip the ordering on costs.
 //!         // In case of a tie we compare positions - this step is necessary
 //!         // to make implementations of `PartialEq` and `Ord` consistent.
@@ -56,12 +46,12 @@
 //!
 //! // `PartialOrd` needs to be implemented as well.
 //! impl PartialOrd for State {
-//!     fn partial_cmp(&self, other: &State) -> Option<Ordering> {
+//!     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 //!         Some(self.cmp(other))
 //!     }
 //! }
 //!
-//! // Each node is represented as an `usize`, for a shorter implementation.
+//! // Each node is represented as a `usize`, for a shorter implementation.
 //! struct Edge {
 //!     node: usize,
 //!     cost: usize,
@@ -155,6 +145,7 @@
 //! }
 //! ```
 
+#![deny(unsafe_op_in_unsafe_fn)]
 #![allow(clippy::needless_doctest_main)]
 #![allow(missing_docs)]
 // #![stable(feature = "rust1", since = "1.0.0")]
@@ -168,7 +159,7 @@ use std::slice;
 // use std::vec::Drain;
 use compare::Compare;
 use core::fmt;
-use core::mem::{size_of, swap};
+use core::mem::{size_of, swap, ManuallyDrop};
 use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -186,14 +177,17 @@ use std::vec;
 /// This will be a max-heap.
 ///
 /// It is a logic error for an item to be modified in such a way that the
-/// item's ordering relative to any other item, as determined by the `Ord`
+/// item's ordering relative to any other item, as determined by the [`Ord`]
 /// trait, changes while it is in the heap. This is normally only possible
-/// through `Cell`, `RefCell`, global state, I/O, or unsafe code.
+/// through [`Cell`], [`RefCell`], global state, I/O, or unsafe code. The
+/// behavior resulting from such a logic error is not specified (it
+/// could include panics, incorrect results, aborts, memory leaks, or
+/// non-termination) but will not be undefined behavior.
 ///
 /// # Examples
 ///
 /// ```
-/// use binary_heap_plus::*;
+/// use binary_heap_plus::BinaryHeap;
 ///
 /// // Type inference lets us omit an explicit type signature (which
 /// // would be `BinaryHeap<i32, MaxComparator>` in this example).
@@ -232,12 +226,49 @@ use std::vec;
 /// // The heap should now be empty.
 /// assert!(heap.is_empty())
 /// ```
+///
+/// ## Min-heap
+///
+/// `BinaryHeap` can also act as a min-heap without requiring [`Reverse`] or a custom [`Ord`]
+/// implementation.
+///
+/// ```
+/// use binary_heap_plus::BinaryHeap;
+///
+/// let mut heap = BinaryHeap::new_min();
+///
+/// // There is no need to wrap values in `Reverse`
+/// heap.push(1);
+/// heap.push(5);
+/// heap.push(2);
+///
+/// // If we pop these scores now, they should come back in the reverse order.
+/// assert_eq!(heap.pop(), Some(1));
+/// assert_eq!(heap.pop(), Some(2));
+/// assert_eq!(heap.pop(), Some(5));
+/// assert_eq!(heap.pop(), None);
+/// ```
+///
+/// # Time complexity
+///
+/// | [push]  | [pop]         | [peek]/[peek\_mut] |
+/// |---------|---------------|--------------------|
+/// | *O*(1)~ | *O*(log(*n*)) | *O*(1)             |
+///
+/// The value for `push` is an expected cost; the method documentation gives a
+/// more detailed analysis.
+///
+/// [`Reverse`]: https://doc.rust-lang.org/stable/core/cmp/struct.Reverse.html
+/// [`Ord`]: https://doc.rust-lang.org/stable/core/cmp/trait.Ord.html
+/// [`Cell`]: https://doc.rust-lang.org/stable/core/cell/struct.Cell.html
+/// [`RefCell`]: https://doc.rust-lang.org/stable/core/cell/struct.RefCell.html
+/// [push]: BinaryHeap::push
+/// [pop]: BinaryHeap::pop
+/// [peek]: BinaryHeap::peek
+/// [peek\_mut]: BinaryHeap::peek_mut
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BinaryHeap<T, C = MaxComparator>
-where
-    C: Compare<T>,
-{
+pub struct BinaryHeap<T, C = MaxComparator> {
     data: Vec<T>,
     cmp: C,
 }
@@ -300,8 +331,7 @@ where
 /// This `struct` is created by the [`peek_mut`] method on [`BinaryHeap`]. See
 /// its documentation for more.
 ///
-/// [`peek_mut`]: struct.BinaryHeap.html#method.peek_mut
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`peek_mut`]: BinaryHeap::peek_mut
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
 pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
     heap: &'a mut BinaryHeap<T, C>,
@@ -309,34 +339,39 @@ pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'a, T, C> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'_, T, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("PeekMut").field(&self.heap.data[0]).finish()
     }
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> Drop for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> Drop for PeekMut<'_, T, C> {
     fn drop(&mut self) {
         if self.sift {
-            self.heap.sift_down(0);
+            // SAFETY: PeekMut is only instantiated for non-empty heaps.
+            unsafe { self.heap.sift_down(0) };
         }
     }
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> Deref for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> Deref for PeekMut<'_, T, C> {
     type Target = T;
     fn deref(&self) -> &T {
-        &self.heap.data[0]
+        debug_assert!(!self.heap.is_empty());
+        // SAFE: PeekMut is only instantiated for non-empty heaps
+        unsafe { self.heap.data.get_unchecked(0) }
     }
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<'a, T, C: Compare<T>> DerefMut for PeekMut<'a, T, C> {
+impl<T, C: Compare<T>> DerefMut for PeekMut<'_, T, C> {
     fn deref_mut(&mut self) -> &mut T {
+        debug_assert!(!self.heap.is_empty());
         self.sift = true;
-        &mut self.heap.data[0]
+        // SAFE: PeekMut is only instantiated for non-empty heaps
+        unsafe { self.heap.data.get_unchecked_mut(0) }
     }
 }
 
@@ -351,7 +386,7 @@ impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone, C: Compare<T> + Clone> Clone for BinaryHeap<T, C> {
+impl<T: Clone, C: Clone> Clone for BinaryHeap<T, C> {
     fn clone(&self) -> Self {
         BinaryHeap {
             data: self.data.clone(),
@@ -374,38 +409,44 @@ impl<T: Ord> Default for BinaryHeap<T> {
 }
 
 // #[stable(feature = "binaryheap_debug", since = "1.4.0")]
-impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for BinaryHeap<T, C> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug, C> fmt::Debug for BinaryHeap<T, C> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from `Vec`.
+    /// Generic constructor for `BinaryHeap` from [`Vec`].
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub fn from_vec(vec: Vec<T>) -> Self {
         BinaryHeap::from_vec_cmp(vec, C::default())
     }
 }
 
 impl<T, C: Compare<T>> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
         unsafe { BinaryHeap::from_vec_cmp_raw(vec, cmp, true) }
     }
 
-    /// Generic constructor for `BinaryHeap` from `Vec` and comparator.
+    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
     ///
     /// Because `BinaryHeap` stores the elements in its internal `Vec`,
     /// it's natural to construct it from `Vec`.
     ///
     /// # Safety
     /// User is responsible for providing valid `rebuild` value.
+    ///
+    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
     pub unsafe fn from_vec_cmp_raw(vec: Vec<T>, cmp: C, rebuild: bool) -> Self {
         let mut heap = BinaryHeap { data: vec, cmp };
         if rebuild && !heap.data.is_empty() {
@@ -425,7 +466,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.push(3);
     /// heap.push(1);
@@ -433,6 +474,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// assert_eq!(heap.pop(), Some(5));
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
+    #[must_use]
     pub fn new() -> Self {
         BinaryHeap::from_vec(vec![])
     }
@@ -449,7 +491,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity(10);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -458,6 +500,7 @@ impl<T: Ord> BinaryHeap<T> {
     /// assert_eq!(heap.pop(), Some(5));
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
+    #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
         BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
@@ -473,13 +516,14 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_min();
     /// heap.push(3);
     /// heap.push(1);
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn new_min() -> Self {
         BinaryHeap::from_vec(vec![])
     }
@@ -496,7 +540,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_min(10);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -504,6 +548,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn with_capacity_min(capacity: usize) -> Self {
         BinaryHeap::from_vec(Vec::with_capacity(capacity))
     }
@@ -522,13 +567,14 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_by(|a: &i32, b: &i32| b.cmp(a));
     /// heap.push(3);
     /// heap.push(1);
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn new_by(f: F) -> Self {
         BinaryHeap::from_vec_cmp(vec![], FnComparator(f))
     }
@@ -545,7 +591,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_by(10, |a: &i32, b: &i32| b.cmp(a));
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -553,6 +599,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
+    #[must_use]
     pub fn with_capacity_by(capacity: usize, f: F) -> Self {
         BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), FnComparator(f))
     }
@@ -571,13 +618,14 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new_by_key(|a: &i32| a % 4);
     /// heap.push(3);
     /// heap.push(1);
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
+    #[must_use]
     pub fn new_by_key(f: F) -> Self {
         BinaryHeap::from_vec_cmp(vec![], KeyComparator(f))
     }
@@ -594,7 +642,7 @@ where
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity_by_key(10, |a: &i32| a % 4);
     /// assert_eq!(heap.capacity(), 10);
     /// heap.push(3);
@@ -602,6 +650,7 @@ where
     /// heap.push(5);
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
+    #[must_use]
     pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
         BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), KeyComparator(f))
     }
@@ -615,7 +664,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// use compare::Compare;
     /// use std::cmp::Ordering;
     ///
@@ -658,6 +707,383 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         }
     }
 
+    /// Returns a mutable reference to the greatest item in the binary heap, or
+    /// `None` if it is empty.
+    ///
+    /// Note: If the `PeekMut` value is leaked, the heap may be in an
+    /// inconsistent state.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    /// let mut heap = BinaryHeap::new();
+    /// assert!(heap.peek_mut().is_none());
+    ///
+    /// heap.push(1);
+    /// heap.push(5);
+    /// heap.push(2);
+    /// {
+    ///     let mut val = heap.peek_mut().unwrap();
+    ///     *val = 0;
+    /// }
+    /// assert_eq!(heap.peek(), Some(&2));
+    /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// If the item is modified then the worst case time complexity is *O*(log(*n*)),
+    /// otherwise it's *O*(1).
+    // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
+    pub fn peek_mut(&mut self) -> Option<PeekMut<'_, T, C>> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(PeekMut {
+                heap: self,
+                sift: false,
+            })
+        }
+    }
+
+    /// Removes the greatest item from the binary heap and returns it, or `None` if it
+    /// is empty.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    ///
+    /// assert_eq!(heap.pop(), Some(3));
+    /// assert_eq!(heap.pop(), Some(1));
+    /// assert_eq!(heap.pop(), None);
+    /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// The worst case cost of `pop` on a heap containing *n* elements is *O*(log(*n*)).
+    // #[stable(feature = "rust1", since = "1.0.0")]
+    pub fn pop(&mut self) -> Option<T> {
+        self.data.pop().map(|mut item| {
+            if !self.is_empty() {
+                swap(&mut item, &mut self.data[0]);
+                // SAFETY: !self.is_empty() means that self.len() > 0
+                unsafe { self.sift_down_to_bottom(0) };
+            }
+            item
+        })
+    }
+
+    /// Pushes an item onto the binary heap.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    /// let mut heap = BinaryHeap::new();
+    /// heap.push(3);
+    /// heap.push(5);
+    /// heap.push(1);
+    ///
+    /// assert_eq!(heap.len(), 3);
+    /// assert_eq!(heap.peek(), Some(&5));
+    /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// The expected cost of `push`, averaged over every possible ordering of
+    /// the elements being pushed, and over a sufficiently large number of
+    /// pushes, is *O*(1). This is the most meaningful cost metric when pushing
+    /// elements that are *not* already in any sorted pattern.
+    ///
+    /// The time complexity degrades if elements are pushed in predominantly
+    /// ascending order. In the worst case, elements are pushed in ascending
+    /// sorted order and the amortized cost per push is *O*(log(*n*)) against a heap
+    /// containing *n* elements.
+    ///
+    /// The worst case cost of a *single* call to `push` is *O*(*n*). The worst case
+    /// occurs when capacity is exhausted and needs a resize. The resize cost
+    /// has been amortized in the previous figures.
+    // #[stable(feature = "rust1", since = "1.0.0")]
+    pub fn push(&mut self, item: T) {
+        let old_len = self.len();
+        self.data.push(item);
+        // SAFETY: Since we pushed a new item it means that
+        //  old_len = self.len() - 1 < self.len()
+        unsafe { self.sift_up(0, old_len) };
+    }
+
+    /// Consumes the `BinaryHeap` and returns a vector in sorted
+    /// (ascending) order.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    ///
+    /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
+    /// heap.push(6);
+    /// heap.push(3);
+    ///
+    /// let vec = heap.into_sorted_vec();
+    /// assert_eq!(vec, [1, 2, 3, 4, 5, 6, 7]);
+    /// ```
+    #[must_use = "`self` will be dropped if the result is not used"]
+    // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
+    pub fn into_sorted_vec(mut self) -> Vec<T> {
+        let mut end = self.len();
+        while end > 1 {
+            end -= 1;
+            // SAFETY: `end` goes from `self.len() - 1` to 1 (both included),
+            //  so it's always a valid index to access.
+            //  It is safe to access index 0 (i.e. `ptr`), because
+            //  1 <= end < self.len(), which means self.len() >= 2.
+            unsafe {
+                let ptr = self.data.as_mut_ptr();
+                ptr::swap(ptr, ptr.add(end));
+            }
+            // SAFETY: `end` goes from `self.len() - 1` to 1 (both included) so:
+            //  0 < 1 <= end <= self.len() - 1 < self.len()
+            //  Which means 0 < end and end < self.len().
+            unsafe { self.sift_down_range(0, end) };
+        }
+        self.into_vec()
+    }
+
+    // The implementations of sift_up and sift_down use unsafe blocks in
+    // order to move an element out of the vector (leaving behind a
+    // hole), shift along the others and move the removed element back into the
+    // vector at the final location of the hole.
+    // The `Hole` type is used to represent this, and make sure
+    // the hole is filled back at the end of its scope, even on panic.
+    // Using a hole reduces the constant factor compared to using swaps,
+    // which involves twice as many moves.
+
+    /// # Safety
+    ///
+    /// The caller must guarantee that `pos < self.len()`.
+    unsafe fn sift_up(&mut self, start: usize, pos: usize) -> usize {
+        // Take out the value at `pos` and create a hole.
+        // SAFETY: The caller guarantees that pos < self.len()
+        let mut hole = unsafe { Hole::new(&mut self.data, pos) };
+
+        while hole.pos() > start {
+            let parent = (hole.pos() - 1) / 2;
+
+            // SAFETY: hole.pos() > start >= 0, which means hole.pos() > 0
+            //  and so hole.pos() - 1 can't underflow.
+            //  This guarantees that parent < hole.pos() so
+            //  it's a valid index and also != hole.pos().
+            if self
+                .cmp
+                .compares_le(hole.element(), unsafe { hole.get(parent) })
+            {
+                break;
+            }
+
+            // SAFETY: Same as above
+            unsafe { hole.move_to(parent) };
+        }
+
+        hole.pos()
+    }
+
+    /// Take an element at `pos` and move it down the heap,
+    /// while its children are larger.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that `pos < end <= self.len()`.
+    unsafe fn sift_down_range(&mut self, pos: usize, end: usize) {
+        // SAFETY: The caller guarantees that pos < end <= self.len().
+        let mut hole = unsafe { Hole::new(&mut self.data, pos) };
+        let mut child = 2 * hole.pos() + 1;
+
+        // Loop invariant: child == 2 * hole.pos() + 1.
+        while child <= end.saturating_sub(2) {
+            // compare with the greater of the two children
+            // SAFETY: child < end - 1 < self.len() and
+            //  child + 1 < end <= self.len(), so they're valid indexes.
+            //  child == 2 * hole.pos() + 1 != hole.pos() and
+            //  child + 1 == 2 * hole.pos() + 2 != hole.pos().
+            // FIXME: 2 * hole.pos() + 1 or 2 * hole.pos() + 2 could overflow
+            //  if T is a ZST
+            child += unsafe { self.cmp.compares_le(hole.get(child), hole.get(child + 1)) } as usize;
+
+            // if we are already in order, stop.
+            // SAFETY: child is now either the old child or the old child+1
+            //  We already proven that both are < self.len() and != hole.pos()
+            if self
+                .cmp
+                .compares_ge(hole.element(), unsafe { hole.get(child) })
+            {
+                return;
+            }
+
+            // SAFETY: same as above.
+            unsafe { hole.move_to(child) };
+            child = 2 * hole.pos() + 1;
+        }
+
+        // SAFETY: && short circuit, which means that in the
+        //  second condition it's already true that child == end - 1 < self.len().
+        if child == end - 1
+            && self
+                .cmp
+                .compares_lt(hole.element(), unsafe { hole.get(child) })
+        {
+            // SAFETY: child is already proven to be a valid index and
+            //  child == 2 * hole.pos() + 1 != hole.pos().
+            unsafe { hole.move_to(child) };
+        }
+    }
+
+    /// # Safety
+    ///
+    /// The caller must guarantee that `pos < self.len()`.
+    unsafe fn sift_down(&mut self, pos: usize) {
+        let len = self.len();
+        // SAFETY: pos < len is guaranteed by the caller and
+        //  obviously len = self.len() <= self.len().
+        unsafe { self.sift_down_range(pos, len) };
+    }
+
+    /// Take an element at `pos` and move it all the way down the heap,
+    /// then sift it up to its position.
+    ///
+    /// Note: This is faster when the element is known to be large / should
+    /// be closer to the bottom.
+    ///
+    /// # Safety
+    ///
+    /// The caller must guarantee that `pos < self.len()`.
+    unsafe fn sift_down_to_bottom(&mut self, mut pos: usize) {
+        let end = self.len();
+        let start = pos;
+
+        // SAFETY: The caller guarantees that pos < self.len().
+        let mut hole = unsafe { Hole::new(&mut self.data, pos) };
+        let mut child = 2 * hole.pos() + 1;
+
+        // Loop invariant: child == 2 * hole.pos() + 1.
+        while child <= end.saturating_sub(2) {
+            // SAFETY: child < end - 1 < self.len() and
+            //  child + 1 < end <= self.len(), so they're valid indexes.
+            //  child == 2 * hole.pos() + 1 != hole.pos() and
+            //  child + 1 == 2 * hole.pos() + 2 != hole.pos().
+            // FIXME: 2 * hole.pos() + 1 or 2 * hole.pos() + 2 could overflow
+            //  if T is a ZST
+            child += unsafe { self.cmp.compares_le(hole.get(child), hole.get(child + 1)) } as usize;
+
+            // SAFETY: Same as above
+            unsafe { hole.move_to(child) };
+            child = 2 * hole.pos() + 1;
+        }
+
+        if child == end - 1 {
+            // SAFETY: child == end - 1 < self.len(), so it's a valid index
+            //  and child == 2 * hole.pos() + 1 != hole.pos().
+            unsafe { hole.move_to(child) };
+        }
+        pos = hole.pos();
+        drop(hole);
+
+        // SAFETY: pos is the position in the hole and was already proven
+        //  to be a valid index.
+        unsafe { self.sift_up(start, pos) };
+    }
+
+    /// Rebuild assuming data[0..start] is still a proper heap.
+    fn rebuild_tail(&mut self, start: usize) {
+        if start == self.len() {
+            return;
+        }
+
+        let tail_len = self.len() - start;
+
+        // `usize::BITS` requires Rust 1.53.0 or greater.
+        #[allow(clippy::manual_bits)]
+        #[inline(always)]
+        fn log2_fast(x: usize) -> usize {
+            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
+        }
+
+        // `rebuild` takes O(self.len()) operations
+        // and about 2 * self.len() comparisons in the worst case
+        // while repeating `sift_up` takes O(tail_len * log(start)) operations
+        // and about 1 * tail_len * log_2(start) comparisons in the worst case,
+        // assuming start >= tail_len. For larger heaps, the crossover point
+        // no longer follows this reasoning and was determined empirically.
+        let better_to_rebuild = if start < tail_len {
+            true
+        } else if self.len() <= 2048 {
+            2 * self.len() < tail_len * log2_fast(start)
+        } else {
+            2 * self.len() < tail_len * 11
+        };
+
+        if better_to_rebuild {
+            self.rebuild();
+        } else {
+            for i in start..self.len() {
+                // SAFETY: The index `i` is always less than self.len().
+                unsafe { self.sift_up(0, i) };
+            }
+        }
+    }
+
+    fn rebuild(&mut self) {
+        let mut n = self.len() / 2;
+        while n > 0 {
+            n -= 1;
+            // SAFETY: n starts from self.len() / 2 and goes down to 0.
+            //  The only case when !(n < self.len()) is if
+            //  self.len() == 0, but it's ruled out by the loop condition.
+            unsafe { self.sift_down(n) };
+        }
+    }
+
+    /// Moves all the elements of `other` into `self`, leaving `other` empty.
+    ///
+    /// # Examples
+    ///
+    /// Basic usage:
+    ///
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    ///
+    /// let mut a = BinaryHeap::from(vec![-10, 1, 2, 3, 3]);
+    /// let mut b = BinaryHeap::from(vec![-20, 5, 43]);
+    ///
+    /// a.append(&mut b);
+    ///
+    /// assert_eq!(a.into_sorted_vec(), [-20, -10, 1, 2, 3, 3, 5, 43]);
+    /// assert!(b.is_empty());
+    /// ```
+    // #[stable(feature = "binary_heap_append", since = "1.11.0")]
+    pub fn append(&mut self, other: &mut Self) {
+        if self.len() < other.len() {
+            swap(self, other);
+        }
+
+        let start = self.data.len();
+
+        self.data.append(&mut other.data);
+
+        self.rebuild_tail(start);
+    }
+}
+
+impl<T, C> BinaryHeap<T, C> {
     /// Returns an iterator visiting all values in the underlying vector, in
     /// arbitrary order.
     ///
@@ -666,7 +1092,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
@@ -689,7 +1115,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5]);
     ///
     /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), vec![5, 4]);
@@ -706,7 +1132,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// assert_eq!(heap.peek(), None);
     ///
@@ -716,45 +1142,14 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// assert_eq!(heap.peek(), Some(&5));
     ///
     /// ```
+    ///
+    /// # Time complexity
+    ///
+    /// Cost is *O*(1) in the worst case.
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn peek(&self) -> Option<&T> {
         self.data.get(0)
-    }
-
-    /// Returns a mutable reference to the greatest item in the binary heap, or
-    /// `None` if it is empty.
-    ///
-    /// Note: If the `PeekMut` value is leaked, the heap may be in an
-    /// inconsistent state.
-    ///
-    /// # Examples
-    ///
-    /// Basic usage:
-    ///
-    /// ```
-    /// use binary_heap_plus::*;
-    /// let mut heap = BinaryHeap::new();
-    /// assert!(heap.peek_mut().is_none());
-    ///
-    /// heap.push(1);
-    /// heap.push(5);
-    /// heap.push(2);
-    /// {
-    ///     let mut val = heap.peek_mut().unwrap();
-    ///     *val = 0;
-    /// }
-    /// assert_eq!(heap.peek(), Some(&2));
-    /// ```
-    // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-    pub fn peek_mut(&mut self) -> Option<PeekMut<T, C>> {
-        if self.is_empty() {
-            None
-        } else {
-            Some(PeekMut {
-                heap: self,
-                sift: false,
-            })
-        }
     }
 
     /// Returns the number of elements the binary heap can hold without reallocating.
@@ -764,11 +1159,12 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::with_capacity(100);
     /// assert!(heap.capacity() >= 100);
     /// heap.push(4);
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn capacity(&self) -> usize {
         self.data.capacity()
@@ -790,14 +1186,14 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve_exact(100);
     /// assert!(heap.capacity() >= 100);
     /// heap.push(4);
     /// ```
     ///
-    /// [`reserve`]: #method.reserve
+    /// [`reserve`]: BinaryHeap::reserve
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn reserve_exact(&mut self, additional: usize) {
         self.data.reserve_exact(additional);
@@ -815,7 +1211,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     /// heap.reserve(100);
     /// assert!(heap.capacity() >= 100);
@@ -833,7 +1229,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity(100);
     ///
     /// assert!(heap.capacity() >= 100);
@@ -845,53 +1241,31 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         self.data.shrink_to_fit();
     }
 
-    /// Removes the greatest item from the binary heap and returns it, or `None` if it
-    /// is empty.
+    /// Discards capacity with a lower bound.
+    ///
+    /// The capacity will remain at least as large as both the length
+    /// and the supplied value.
+    ///
+    /// If the current capacity is less than the lower limit, this is a no-op.
     ///
     /// # Examples
     ///
-    /// Basic usage:
-    ///
     /// ```
-    /// use binary_heap_plus::*;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// use std::collections::BinaryHeap;
+    /// let mut heap: BinaryHeap<i32> = BinaryHeap::with_capacity(100);
     ///
-    /// assert_eq!(heap.pop(), Some(3));
-    /// assert_eq!(heap.pop(), Some(1));
-    /// assert_eq!(heap.pop(), None);
+    /// assert!(heap.capacity() >= 100);
+    /// heap.shrink_to(10);
+    /// assert!(heap.capacity() >= 10);
     /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn pop(&mut self) -> Option<T> {
-        self.data.pop().map(|mut item| {
-            if !self.is_empty() {
-                swap(&mut item, &mut self.data[0]);
-                self.sift_down_to_bottom(0);
-            }
-            item
-        })
-    }
-
-    /// Pushes an item onto the binary heap.
     ///
-    /// # Examples
+    /// # Compatibility
     ///
-    /// Basic usage:
-    ///
-    /// ```
-    /// use binary_heap_plus::*;
-    /// let mut heap = BinaryHeap::new();
-    /// heap.push(3);
-    /// heap.push(5);
-    /// heap.push(1);
-    ///
-    /// assert_eq!(heap.len(), 3);
-    /// assert_eq!(heap.peek(), Some(&5));
-    /// ```
-    // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn push(&mut self, item: T) {
-        let old_len = self.len();
-        self.data.push(item);
-        self.sift_up(0, old_len);
+    /// This feature requires Rust 1.56.0 or greater.
+    #[inline]
+    #[cfg(rustc_1_56)]
+    pub fn shrink_to(&mut self, min_capacity: usize) {
+        self.data.shrink_to(min_capacity)
     }
 
     /// Consumes the `BinaryHeap` and returns the underlying vector
@@ -902,7 +1276,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5, 6, 7]);
     /// let vec = heap.into_vec();
     ///
@@ -911,129 +1285,10 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///     println!("{}", x);
     /// }
     /// ```
+    #[must_use = "`self` will be dropped if the result is not used"]
     // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
     pub fn into_vec(self) -> Vec<T> {
         self.into()
-    }
-
-    /// Consumes the `BinaryHeap` and returns a vector in sorted
-    /// (ascending) order.
-    ///
-    /// # Examples
-    ///
-    /// Basic usage:
-    ///
-    /// ```
-    /// use binary_heap_plus::*;
-    ///
-    /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
-    /// heap.push(6);
-    /// heap.push(3);
-    ///
-    /// let vec = heap.into_sorted_vec();
-    /// assert_eq!(vec, [1, 2, 3, 4, 5, 6, 7]);
-    /// ```
-    // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-    pub fn into_sorted_vec(mut self) -> Vec<T> {
-        let mut end = self.len();
-        while end > 1 {
-            end -= 1;
-            // SAFETY: `end` goes from `self.len() - 1` to 1 (both included),
-            //  so it's always a valid index to access.
-            //  It is safe to access index 0 (i.e. `ptr`), because
-            //  1 <= end < self.len(), which means self.len() >= 2.
-            unsafe {
-                let ptr = self.data.as_mut_ptr();
-                ptr::swap(ptr, ptr.add(end));
-            }
-            self.sift_down_range(0, end);
-        }
-        self.into_vec()
-    }
-
-    // The implementations of sift_up and sift_down use unsafe blocks in
-    // order to move an element out of the vector (leaving behind a
-    // hole), shift along the others and move the removed element back into the
-    // vector at the final location of the hole.
-    // The `Hole` type is used to represent this, and make sure
-    // the hole is filled back at the end of its scope, even on panic.
-    // Using a hole reduces the constant factor compared to using swaps,
-    // which involves twice as many moves.
-    fn sift_up(&mut self, start: usize, pos: usize) -> usize {
-        unsafe {
-            // Take out the value at `pos` and create a hole.
-            let mut hole = Hole::new(&mut self.data, pos);
-
-            while hole.pos() > start {
-                let parent = (hole.pos() - 1) / 2;
-                // if hole.element() <= hole.get(parent) {
-                if self.cmp.compare(hole.element(), hole.get(parent)) != Ordering::Greater {
-                    break;
-                }
-                hole.move_to(parent);
-            }
-            hole.pos()
-        }
-    }
-
-    /// Take an element at `pos` and move it down the heap,
-    /// while its children are larger.
-    fn sift_down_range(&mut self, pos: usize, end: usize) {
-        unsafe {
-            let mut hole = Hole::new(&mut self.data, pos);
-            let mut child = 2 * pos + 1;
-            while child < end - 1 {
-                // compare with the greater of the two children
-                // if !(hole.get(child) > hole.get(child + 1)) { child += 1 }
-                child += (self.cmp.compare(hole.get(child), hole.get(child + 1))
-                    != Ordering::Greater) as usize;
-                // if we are already in order, stop.
-                // if hole.element() >= hole.get(child) {
-                if self.cmp.compare(hole.element(), hole.get(child)) != Ordering::Less {
-                    return;
-                }
-                hole.move_to(child);
-                child = 2 * hole.pos() + 1;
-            }
-            if child == end - 1
-                && self.cmp.compare(hole.element(), hole.get(child)) == Ordering::Less
-            {
-                hole.move_to(child);
-            }
-        }
-    }
-
-    fn sift_down(&mut self, pos: usize) {
-        let len = self.len();
-        self.sift_down_range(pos, len);
-    }
-
-    /// Take an element at `pos` and move it all the way down the heap,
-    /// then sift it up to its position.
-    ///
-    /// Note: This is faster when the element is known to be large / should
-    /// be closer to the bottom.
-    fn sift_down_to_bottom(&mut self, mut pos: usize) {
-        let end = self.len();
-        let start = pos;
-        unsafe {
-            let mut hole = Hole::new(&mut self.data, pos);
-            let mut child = 2 * pos + 1;
-            while child < end - 1 {
-                let right = child + 1;
-                // compare with the greater of the two children
-                // if !(hole.get(child) > hole.get(right)) { child += 1 }
-                child += (self.cmp.compare(hole.get(child), hole.get(right)) != Ordering::Greater)
-                    as usize;
-                hole.move_to(child);
-                child = 2 * hole.pos() + 1;
-            }
-            if child == end - 1 {
-                hole.move_to(child);
-            }
-            pos = hole.pos;
-        }
-        self.sift_up(start, pos);
     }
 
     /// Returns the length of the binary heap.
@@ -1043,11 +1298,12 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert_eq!(heap.len(), 2);
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn len(&self) -> usize {
         self.data.len()
@@ -1060,7 +1316,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::new();
     ///
     /// assert!(heap.is_empty());
@@ -1071,21 +1327,25 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// assert!(!heap.is_empty());
     /// ```
+    #[must_use]
     // #[stable(feature = "rust1", since = "1.0.0")]
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
 
-    /// Clears the binary heap, returning an iterator over the removed elements.
+    /// Clears the binary heap, returning an iterator over the removed elements
+    /// in arbitrary order. If the iterator is dropped before being fully
+    /// consumed, it drops the remaining elements in arbitrary order.
     ///
-    /// The elements are removed in arbitrary order.
+    /// The returned iterator keeps a mutable borrow on the heap to optimize
+    /// its implementation.
     ///
     /// # Examples
     ///
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -1098,7 +1358,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     #[inline]
     // #[stable(feature = "drain", since = "1.6.0")]
-    pub fn drain(&mut self) -> Drain<T> {
+    pub fn drain(&mut self) -> Drain<'_, T> {
         Drain {
             iter: self.data.drain(..),
         }
@@ -1111,7 +1371,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let mut heap = BinaryHeap::from(vec![1, 3]);
     ///
     /// assert!(!heap.is_empty());
@@ -1124,91 +1384,30 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     pub fn clear(&mut self) {
         self.drain();
     }
-
-    fn rebuild(&mut self) {
-        let mut n = self.len() / 2;
-        while n > 0 {
-            n -= 1;
-            self.sift_down(n);
-        }
-    }
-
-    /// Moves all the elements of `other` into `self`, leaving `other` empty.
-    ///
-    /// # Examples
-    ///
-    /// Basic usage:
-    ///
-    /// ```
-    /// use binary_heap_plus::*;
-    ///
-    /// let v = vec![-10, 1, 2, 3, 3];
-    /// let mut a = BinaryHeap::from(v);
-    ///
-    /// let v = vec![-20, 5, 43];
-    /// let mut b = BinaryHeap::from(v);
-    ///
-    /// a.append(&mut b);
-    ///
-    /// assert_eq!(a.into_sorted_vec(), [-20, -10, 1, 2, 3, 3, 5, 43]);
-    /// assert!(b.is_empty());
-    /// ```
-    // #[stable(feature = "binary_heap_append", since = "1.11.0")]
-    pub fn append(&mut self, other: &mut Self) {
-        if self.len() < other.len() {
-            swap(self, other);
-        }
-
-        if other.is_empty() {
-            return;
-        }
-
-        #[inline(always)]
-        fn log2_fast(x: usize) -> usize {
-            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
-        }
-
-        // `rebuild` takes O(len1 + len2) operations
-        // and about 2 * (len1 + len2) comparisons in the worst case
-        // while `extend` takes O(len2 * log_2(len1)) operations
-        // and about 1 * len2 * log_2(len1) comparisons in the worst case,
-        // assuming len1 >= len2.
-        #[inline]
-        fn better_to_rebuild(len1: usize, len2: usize) -> bool {
-            2 * (len1 + len2) < len2 * log2_fast(len1)
-        }
-
-        if better_to_rebuild(self.len(), other.len()) {
-            self.data.append(&mut other.data);
-            self.rebuild();
-        } else {
-            self.extend(other.drain());
-        }
-    }
 }
 
-/// Hole represents a hole in a slice i.e. an index without valid value
+/// Hole represents a hole in a slice i.e., an index without valid value
 /// (because it was moved from or duplicated).
 /// In drop, `Hole` will restore the slice by filling the hole
 /// position with the value that was originally removed.
 struct Hole<'a, T: 'a> {
     data: &'a mut [T],
-    /// `elt` is always `Some` from new until drop.
-    elt: Option<T>,
+    elt: ManuallyDrop<T>,
     pos: usize,
 }
 
 impl<'a, T> Hole<'a, T> {
-    /// Create a new Hole at index `pos`.
+    /// Create a new `Hole` at index `pos`.
     ///
     /// Unsafe because pos must be within the data slice.
     #[inline]
     unsafe fn new(data: &'a mut [T], pos: usize) -> Self {
         debug_assert!(pos < data.len());
-        let elt = ptr::read(&data[pos]);
+        // SAFE: pos should be inside the slice
+        let elt = unsafe { ptr::read(data.get_unchecked(pos)) };
         Hole {
             data,
-            elt: Some(elt),
+            elt: ManuallyDrop::new(elt),
             pos,
         }
     }
@@ -1221,7 +1420,7 @@ impl<'a, T> Hole<'a, T> {
     /// Returns a reference to the element removed.
     #[inline]
     fn element(&self) -> &T {
-        self.elt.as_ref().unwrap()
+        &self.elt
     }
 
     /// Returns a reference to the element at `index`.
@@ -1231,7 +1430,7 @@ impl<'a, T> Hole<'a, T> {
     unsafe fn get(&self, index: usize) -> &T {
         debug_assert!(index != self.pos);
         debug_assert!(index < self.data.len());
-        self.data.get_unchecked(index)
+        unsafe { self.data.get_unchecked(index) }
     }
 
     /// Move hole to new location
@@ -1241,47 +1440,48 @@ impl<'a, T> Hole<'a, T> {
     unsafe fn move_to(&mut self, index: usize) {
         debug_assert!(index != self.pos);
         debug_assert!(index < self.data.len());
-        let index_ptr: *const _ = self.data.get_unchecked(index);
-        let hole_ptr = self.data.get_unchecked_mut(self.pos);
-        ptr::copy_nonoverlapping(index_ptr, hole_ptr, 1);
+        unsafe {
+            let ptr = self.data.as_mut_ptr();
+            let index_ptr: *const _ = ptr.add(index);
+            let hole_ptr = ptr.add(self.pos);
+            ptr::copy_nonoverlapping(index_ptr, hole_ptr, 1);
+        }
         self.pos = index;
     }
 }
 
-impl<'a, T> Drop for Hole<'a, T> {
+impl<T> Drop for Hole<'_, T> {
     #[inline]
     fn drop(&mut self) {
         // fill the hole again
         unsafe {
             let pos = self.pos;
-            ptr::write(self.data.get_unchecked_mut(pos), self.elt.take().unwrap());
+            ptr::copy_nonoverlapping(&*self.elt, self.data.get_unchecked_mut(pos), 1);
         }
     }
 }
 
 /// An iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`iter`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by [`BinaryHeap::iter()`]. See its
 /// documentation for more.
-///
-/// [`iter`]: struct.BinaryHeap.html#method.iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[stable(feature = "rust1", since = "1.0.0")]
 pub struct Iter<'a, T: 'a> {
     iter: slice::Iter<'a, T>,
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<'a, T: 'a + fmt::Debug> fmt::Debug for Iter<'a, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl<T: fmt::Debug> fmt::Debug for Iter<'_, T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("Iter").field(&self.iter.as_slice()).finish()
     }
 }
 
 // FIXME(#26925) Remove in favor of `#[derive(Clone)]`
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T> Clone for Iter<'a, T> {
-    fn clone(&self) -> Iter<'a, T> {
+impl<T> Clone for Iter<'_, T> {
+    fn clone(&self) -> Self {
         Iter {
             iter: self.iter.clone(),
         }
@@ -1300,6 +1500,11 @@ impl<'a, T> Iterator for Iter<'a, T> {
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+
+    #[inline]
+    fn last(self) -> Option<&'a T> {
+        self.iter.last()
     }
 }
 
@@ -1323,11 +1528,10 @@ impl<'a, T> DoubleEndedIterator for Iter<'a, T> {
 
 /// An owning iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`into_iter`] method on [`BinaryHeap`][`BinaryHeap`]
-/// (provided by the `IntoIterator` trait). See its documentation for more.
+/// This `struct` is created by [`BinaryHeap::into_iter()`]
+/// (provided by the [`IntoIterator`] trait). See its documentation for more.
 ///
-/// [`into_iter`]: struct.BinaryHeap.html#method.into_iter
-/// [`BinaryHeap`]: struct.BinaryHeap.html
+/// [`IntoIterator`]: https://doc.rust-lang.org/stable/core/iter/trait.IntoIterator.html
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[derive(Clone)]
 pub struct IntoIter<T> {
@@ -1336,7 +1540,7 @@ pub struct IntoIter<T> {
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
 impl<T: fmt::Debug> fmt::Debug for IntoIter<T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("IntoIter")
             .field(&self.iter.as_slice())
             .finish()
@@ -1365,7 +1569,6 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
         self.iter.next_back()
     }
 }
-
 // #[stable(feature = "rust1", since = "1.0.0")]
 // impl<T> ExactSizeIterator for IntoIter<T> {
 //     fn is_empty(&self) -> bool {
@@ -1376,9 +1579,10 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<T> FusedIterator for IntoIter<T> {}
 
+#[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
 #[derive(Clone, Debug)]
-pub struct IntoIterSorted<T, C: Compare<T>> {
+pub struct IntoIterSorted<T, C> {
     inner: BinaryHeap<T, C>,
 }
 
@@ -1400,19 +1604,16 @@ impl<T, C: Compare<T>> Iterator for IntoIterSorted<T, C> {
 
 /// A draining iterator over the elements of a `BinaryHeap`.
 ///
-/// This `struct` is created by the [`drain`] method on [`BinaryHeap`]. See its
+/// This `struct` is created by [`BinaryHeap::drain()`]. See its
 /// documentation for more.
-///
-/// [`drain`]: struct.BinaryHeap.html#method.drain
-/// [`BinaryHeap`]: struct.BinaryHeap.html
 // #[stable(feature = "drain", since = "1.6.0")]
-// #[derive(Debug)]
+#[derive(Debug)]
 pub struct Drain<'a, T: 'a> {
     iter: vec::Drain<'a, T>,
 }
 
 // #[stable(feature = "drain", since = "1.6.0")]
-impl<'a, T: 'a> Iterator for Drain<'a, T> {
+impl<T> Iterator for Drain<'_, T> {
     type Item = T;
 
     #[inline]
@@ -1427,7 +1628,7 @@ impl<'a, T: 'a> Iterator for Drain<'a, T> {
 }
 
 // #[stable(feature = "drain", since = "1.6.0")]
-impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
+impl<T> DoubleEndedIterator for Drain<'_, T> {
     #[inline]
     fn next_back(&mut self) -> Option<T> {
         self.iter.next_back()
@@ -1446,22 +1647,40 @@ impl<'a, T: 'a> DoubleEndedIterator for Drain<'a, T> {
 
 // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
 impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
-    /// creates a max heap from a vec
+    /// Converts a `Vec<T>` into a `BinaryHeap<T>`.
+    ///
+    /// This conversion happens in-place, and has *O*(*n*) time complexity.
     fn from(vec: Vec<T>) -> Self {
         BinaryHeap::from_vec(vec)
     }
 }
 
-// #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-// impl<T, C: Compare<T>> From<BinaryHeap<T, C>> for Vec<T> {
-//     fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
-//         heap.data
-//     }
-// }
+/// # Compatibility
+///
+/// This trait is only implemented for Rust 1.56.0 or greater.
+#[cfg(rustc_1_56)]
+impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
+    /// ```
+    /// use binary_heap_plus::BinaryHeap;
+    ///
+    /// let mut h1 = BinaryHeap::from([1, 4, 2, 3]);
+    /// let mut h2: BinaryHeap<_> = [1, 4, 2, 3].into();
+    /// while let Some((a, b)) = h1.pop().zip(h2.pop()) {
+    ///     assert_eq!(a, b);
+    /// }
+    /// ```
+    fn from(arr: [T; N]) -> Self {
+        Self::from_iter(arr)
+    }
+}
 
-impl<T, C: Compare<T>> Into<Vec<T>> for BinaryHeap<T, C> {
-    fn into(self) -> Vec<T> {
-        self.data
+impl<T, C> From<BinaryHeap<T, C>> for Vec<T> {
+    /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
+    ///
+    /// This conversion requires no data movement or allocation, and has
+    /// constant time complexity.
+    fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
+        heap.data
     }
 }
 
@@ -1473,7 +1692,7 @@ impl<T: Ord> FromIterator<T> for BinaryHeap<T> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T, C: Compare<T>> IntoIterator for BinaryHeap<T, C> {
+impl<T, C> IntoIterator for BinaryHeap<T, C> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -1486,7 +1705,7 @@ impl<T, C: Compare<T>> IntoIterator for BinaryHeap<T, C> {
     /// Basic usage:
     ///
     /// ```
-    /// use binary_heap_plus::*;
+    /// use binary_heap_plus::BinaryHeap;
     /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
@@ -1503,7 +1722,7 @@ impl<T, C: Compare<T>> IntoIterator for BinaryHeap<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T, C: Compare<T>> IntoIterator for &'a BinaryHeap<T, C> {
+impl<'a, T, C> IntoIterator for &'a BinaryHeap<T, C> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
@@ -1540,9 +1759,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
 
         self.reserve(lower);
 
-        for elem in iterator {
-            self.push(elem);
-        }
+        iterator.for_each(move |elem| self.push(elem));
     }
 }
 
