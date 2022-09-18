@@ -288,7 +288,7 @@ pub struct MaxComparator;
 
 impl<T: Ord> Compare<T> for MaxComparator {
     fn compare(&self, a: &T, b: &T) -> Ordering {
-        a.cmp(&b)
+        a.cmp(b)
     }
 }
 
@@ -300,7 +300,7 @@ pub struct MinComparator;
 
 impl<T: Ord> Compare<T> for MinComparator {
     fn compare(&self, a: &T, b: &T) -> Ordering {
-        b.cmp(&a)
+        b.cmp(a)
     }
 }
 
