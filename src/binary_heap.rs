@@ -157,7 +157,7 @@ use std::slice;
 // use std::vec::Drain;
 use compare::Compare;
 use core::fmt;
-use core::mem::{size_of, swap, ManuallyDrop};
+use core::mem::{swap, ManuallyDrop};
 use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -1008,11 +1008,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
 
         let tail_len = self.len() - start;
 
-        // `usize::BITS` requires Rust 1.53.0 or greater.
-        #[allow(clippy::manual_bits)]
         #[inline(always)]
         fn log2_fast(x: usize) -> usize {
-            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
+            (usize::BITS - x.leading_zeros() - 1) as usize
         }
 
         // `rebuild` takes O(self.len()) operations
