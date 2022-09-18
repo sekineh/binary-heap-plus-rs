@@ -10,9 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `#[must_use]` attribute to many methods, porting and extending several
   rust-lang/rust PRs
-* Method `shrink_to()` for Rust 1.56.0 and greater, ported from rust-lang/rust
-* Implementation of `From<[T; N]>` for `BinaryHeap<T>` for Rust 1.56.0 or
-  greater, ported from rust-lang/rust#84111
+* Method `shrink_to()`, ported from rust-lang/rust
+* Implementation of `From<[T; N]>` for `BinaryHeap<T>`, ported from
+  rust-lang/rust#84111
 * Links to referenced items in the documenation
 * Example of a min-heap, ported from rust-lang/rust#60451
 * Documentation of time complexities of several methods, ported from
@@ -20,7 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-* Bump MSRV (minimum supported rust version) to rust 1.52.0.
+* Migrate to Rust 2021 Edition
+* Increase MSRV (minimum supported rust version) to rust 1.56.0.
 * Implement `From<BinaryHeap<T, C>>` for `Vec<T>` instead of `Into<Vec<T>>` for
   `BinaryHeap<T, C>`
 * Port rust-lang/rust#77435 improvement to rebuild heuristic of

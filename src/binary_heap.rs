@@ -21,8 +21,6 @@
 //!
 //! ```
 //! use std::cmp::Ordering;
-//! // Only required for Rust versions prior to 1.43.0.
-//! use std::usize;
 //! use binary_heap_plus::BinaryHeap;
 //!
 //! #[derive(Copy, Clone, Eq, PartialEq)]
@@ -1258,12 +1256,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// heap.shrink_to(10);
     /// assert!(heap.capacity() >= 10);
     /// ```
-    ///
-    /// # Compatibility
-    ///
-    /// This feature requires Rust 1.56.0 or greater.
     #[inline]
-    #[cfg(rustc_1_56)]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.data.shrink_to(min_capacity)
     }
@@ -1655,10 +1648,6 @@ impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
     }
 }
 
-/// # Compatibility
-///
-/// This trait is only implemented for Rust 1.56.0 or greater.
-#[cfg(rustc_1_56)]
 impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
