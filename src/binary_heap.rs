@@ -1106,7 +1106,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// }
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             iter: self.data.iter(),
         }
