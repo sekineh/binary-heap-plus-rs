@@ -21,8 +21,6 @@
 //!
 //! ```
 //! use std::cmp::Ordering;
-//! // Only required for Rust versions prior to 1.43.0.
-//! use std::usize;
 //! use binary_heap_plus::BinaryHeap;
 //!
 //! #[derive(Copy, Clone, Eq, PartialEq)]
@@ -159,7 +157,7 @@ use std::slice;
 // use std::vec::Drain;
 use compare::Compare;
 use core::fmt;
-use core::mem::{size_of, swap, ManuallyDrop};
+use core::mem::{swap, ManuallyDrop};
 use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -227,6 +225,15 @@ use std::vec;
 /// assert!(heap.is_empty())
 /// ```
 ///
+/// A `BinaryHeap` with a known list of items can be initialized from an array:
+///
+/// ```
+/// use binary_heap_plus::BinaryHeap;
+///
+/// // This will create a max-heap.
+/// let heap = BinaryHeap::from([1, 5, 2]);
+/// ```
+///
 /// ## Min-heap
 ///
 /// `BinaryHeap` can also act as a min-heap without requiring [`Reverse`] or a custom [`Ord`]
@@ -281,7 +288,7 @@ pub struct MaxComparator;
 
 impl<T: Ord> Compare<T> for MaxComparator {
     fn compare(&self, a: &T, b: &T) -> Ordering {
-        a.cmp(&b)
+        a.cmp(b)
     }
 }
 
@@ -293,7 +300,7 @@ pub struct MinComparator;
 
 impl<T: Ord> Compare<T> for MinComparator {
     fn compare(&self, a: &T, b: &T) -> Ordering {
-        b.cmp(&a)
+        b.cmp(a)
     }
 }
 
@@ -687,7 +694,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// // replace the comparor
     /// heap.replace_cmp(Comparator { ascending: false });
-    /// assert_eq!(heap.into_iter_sorted().collect::<Vec<_>>(), vec![5, 3, 1]);
+    /// assert_eq!(heap.into_iter_sorted().collect::<Vec<_>>(), [5, 3, 1]);
     /// ```
     #[inline]
     pub fn replace_cmp(&mut self, cmp: C) {
@@ -757,7 +764,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert_eq!(heap.pop(), Some(3));
     /// assert_eq!(heap.pop(), Some(1));
@@ -830,7 +837,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
     ///
-    /// let mut heap = BinaryHeap::from(vec![1, 2, 4, 5, 7]);
+    /// let mut heap = BinaryHeap::from([1, 2, 4, 5, 7]);
     /// heap.push(6);
     /// heap.push(3);
     ///
@@ -1010,11 +1017,9 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
 
         let tail_len = self.len() - start;
 
-        // `usize::BITS` requires Rust 1.53.0 or greater.
-        #[allow(clippy::manual_bits)]
         #[inline(always)]
         fn log2_fast(x: usize) -> usize {
-            8 * size_of::<usize>() - (x.leading_zeros() as usize) - 1
+            (usize::BITS - x.leading_zeros() - 1) as usize
         }
 
         // `rebuild` takes O(self.len()) operations
@@ -1061,8 +1066,8 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
     ///
-    /// let mut a = BinaryHeap::from(vec![-10, 1, 2, 3, 3]);
-    /// let mut b = BinaryHeap::from(vec![-20, 5, 43]);
+    /// let mut a = BinaryHeap::from([-10, 1, 2, 3, 3]);
+    /// let mut b = BinaryHeap::from([-20, 5, 43]);
     ///
     /// a.append(&mut b);
     ///
@@ -1093,7 +1098,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
     /// for x in heap.iter() {
@@ -1101,7 +1106,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// }
     /// ```
     // #[stable(feature = "rust1", since = "1.0.0")]
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             iter: self.data.iter(),
         }
@@ -1116,9 +1121,9 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4, 5]);
     ///
-    /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), vec![5, 4]);
+    /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), [5, 4]);
     /// ```
     // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
     pub fn into_iter_sorted(self) -> IntoIterSorted<T, C> {
@@ -1258,12 +1263,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// heap.shrink_to(10);
     /// assert!(heap.capacity() >= 10);
     /// ```
-    ///
-    /// # Compatibility
-    ///
-    /// This feature requires Rust 1.56.0 or greater.
     #[inline]
-    #[cfg(rustc_1_56)]
     pub fn shrink_to(&mut self, min_capacity: usize) {
         self.data.shrink_to(min_capacity)
     }
@@ -1277,7 +1277,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4, 5, 6, 7]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4, 5, 6, 7]);
     /// let vec = heap.into_vec();
     ///
     /// // Will print in some order
@@ -1299,7 +1299,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 3]);
+    /// let heap = BinaryHeap::from([1, 3]);
     ///
     /// assert_eq!(heap.len(), 2);
     /// ```
@@ -1346,7 +1346,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert!(!heap.is_empty());
     ///
@@ -1372,7 +1372,7 @@ impl<T, C> BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let mut heap = BinaryHeap::from(vec![1, 3]);
+    /// let mut heap = BinaryHeap::from([1, 3]);
     ///
     /// assert!(!heap.is_empty());
     ///
@@ -1655,10 +1655,6 @@ impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
     }
 }
 
-/// # Compatibility
-///
-/// This trait is only implemented for Rust 1.56.0 or greater.
-#[cfg(rustc_1_56)]
 impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
     /// ```
     /// use binary_heap_plus::BinaryHeap;
@@ -1706,7 +1702,7 @@ impl<T, C> IntoIterator for BinaryHeap<T, C> {
     ///
     /// ```
     /// use binary_heap_plus::BinaryHeap;
-    /// let heap = BinaryHeap::from(vec![1, 2, 3, 4]);
+    /// let heap = BinaryHeap::from([1, 2, 3, 4]);
     ///
     /// // Print 1, 2, 3, 4 in arbitrary order
     /// for x in heap.into_iter() {

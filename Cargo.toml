@@ -8,10 +8,8 @@ repository = "https://github.com/sekineh/binary-heap-plus-rs"
 readme = "README.md"
 keywords = ["binary", "heap", "priority", "queue"]
 categories = ["data-structures", "algorithms", ]
-edition = "2018"
-
-[build-dependencies]
-autocfg = "1"
+edition = "2021"
+rust-version = "1.56.0"
 
 [dependencies]
 compare = "0.1.0"
@@ -19,7 +17,7 @@ serde = { version = "1.0.116", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 serde_json = "1.0.57"
-rand = "0.7.3"
+rand = "0.8"
 
 [badges]
 # TODO: waiting for PR to land...: https://github.com/rust-lang/crates.io/pull/1838#
