@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2022-09-30
+
 ### Added
 
 * `#[must_use]` attribute to many methods, porting and extending several
