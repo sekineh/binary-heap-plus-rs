@@ -151,7 +151,7 @@
 // use core::ops::{Deref, DerefMut, Place, Placer, InPlace};
 // use core::iter::{FromIterator, FusedIterator};
 use std::cmp::Ordering;
-use std::iter::FromIterator;
+use std::collections::HashMap;
 use std::slice;
 // use std::iter::FusedIterator;
 // use std::vec::Drain;
@@ -275,9 +275,10 @@ use std::vec;
 /// [peek\_mut]: BinaryHeap::peek_mut
 // #[stable(feature = "rust1", since = "1.0.0")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct BinaryHeap<T, C = MaxComparator> {
+pub struct BinaryHeap<K, T, C = MaxComparator> {
     data: Vec<T>,
     cmp: C,
+    indices: HashMap<K, usize>,
 }
 
 /// For `T` that implements `Ord`, you can use this struct to quickly
@@ -340,20 +341,20 @@ where
 ///
 /// [`peek_mut`]: BinaryHeap::peek_mut
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-pub struct PeekMut<'a, T: 'a, C: 'a + Compare<T>> {
-    heap: &'a mut BinaryHeap<T, C>,
+pub struct PeekMut<'a, K, T: 'a, C: 'a + Compare<T>> {
+    heap: &'a mut BinaryHeap<K, T, C>,
     sift: bool,
 }
 
 // #[stable(feature = "collection_debug", since = "1.17.0")]
-impl<T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'_, T, C> {
+impl<K, T: fmt::Debug, C: Compare<T>> fmt::Debug for PeekMut<'_, K, T, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_tuple("PeekMut").field(&self.heap.data[0]).finish()
     }
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<T, C: Compare<T>> Drop for PeekMut<'_, T, C> {
+impl<K, T, C: Compare<T>> Drop for PeekMut<'_, K, T, C> {
     fn drop(&mut self) {
         if self.sift {
             // SAFETY: PeekMut is only instantiated for non-empty heaps.
@@ -363,7 +364,7 @@ impl<T, C: Compare<T>> Drop for PeekMut<'_, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<T, C: Compare<T>> Deref for PeekMut<'_, T, C> {
+impl<K, T, C: Compare<T>> Deref for PeekMut<'_, K, T, C> {
     type Target = T;
     fn deref(&self) -> &T {
         debug_assert!(!self.heap.is_empty());
@@ -373,7 +374,7 @@ impl<T, C: Compare<T>> Deref for PeekMut<'_, T, C> {
 }
 
 // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-impl<T, C: Compare<T>> DerefMut for PeekMut<'_, T, C> {
+impl<K, T, C: Compare<T>> DerefMut for PeekMut<'_, K, T, C> {
     fn deref_mut(&mut self) -> &mut T {
         debug_assert!(!self.heap.is_empty());
         self.sift = true;
@@ -382,10 +383,10 @@ impl<T, C: Compare<T>> DerefMut for PeekMut<'_, T, C> {
     }
 }
 
-impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
+impl<'a, K, T, C: Compare<T>> PeekMut<'_, K, T, C> {
     /// Removes the peeked value from the heap and returns it.
     // #[stable(feature = "binary_heap_peek_mut_pop", since = "1.18.0")]
-    pub fn pop(mut this: PeekMut<'a, T, C>) -> T {
+    pub fn pop(mut this: PeekMut<'_, K, T, C>) -> T {
         let value = this.heap.pop().unwrap();
         this.sift = false;
         value
@@ -393,11 +394,12 @@ impl<'a, T, C: Compare<T>> PeekMut<'a, T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Clone, C: Clone> Clone for BinaryHeap<T, C> {
+impl<K: Clone, T: Clone, C: Clone> Clone for BinaryHeap<K, T, C> {
     fn clone(&self) -> Self {
         BinaryHeap {
             data: self.data.clone(),
             cmp: self.cmp.clone(),
+            indices: self.indices.clone(),
         }
     }
 
@@ -407,63 +409,22 @@ impl<T: Clone, C: Clone> Clone for BinaryHeap<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> Default for BinaryHeap<T> {
-    /// Creates an empty `BinaryHeap<T>`.
+impl<K, T, C: Compare<T> + Default> Default for BinaryHeap<K, T, C> {
+    /// Creates an empty `BinaryHeap<K, T>`.
     #[inline]
-    fn default() -> BinaryHeap<T> {
+    fn default() -> BinaryHeap<K, T, C> {
         BinaryHeap::new()
     }
 }
 
 // #[stable(feature = "binaryheap_debug", since = "1.4.0")]
-impl<T: fmt::Debug, C> fmt::Debug for BinaryHeap<T, C> {
+impl<K, T: fmt::Debug, C> fmt::Debug for BinaryHeap<K, T, C> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_list().entries(self.iter()).finish()
     }
 }
 
-impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from [`Vec`].
-    ///
-    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
-    /// it's natural to construct it from `Vec`.
-    ///
-    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
-    pub fn from_vec(vec: Vec<T>) -> Self {
-        BinaryHeap::from_vec_cmp(vec, C::default())
-    }
-}
-
-impl<T, C: Compare<T>> BinaryHeap<T, C> {
-    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
-    ///
-    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
-    /// it's natural to construct it from `Vec`.
-    ///
-    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
-    pub fn from_vec_cmp(vec: Vec<T>, cmp: C) -> Self {
-        unsafe { BinaryHeap::from_vec_cmp_raw(vec, cmp, true) }
-    }
-
-    /// Generic constructor for `BinaryHeap` from [`Vec`] and comparator.
-    ///
-    /// Because `BinaryHeap` stores the elements in its internal `Vec`,
-    /// it's natural to construct it from `Vec`.
-    ///
-    /// # Safety
-    /// User is responsible for providing valid `rebuild` value.
-    ///
-    /// [`Vec`]: https://doc.rust-lang.org/stable/std/vec/struct.Vec.html
-    pub unsafe fn from_vec_cmp_raw(vec: Vec<T>, cmp: C, rebuild: bool) -> Self {
-        let mut heap = BinaryHeap { data: vec, cmp };
-        if rebuild && !heap.data.is_empty() {
-            heap.rebuild();
-        }
-        heap
-    }
-}
-
-impl<T: Ord> BinaryHeap<T> {
+impl<K, T, C: Compare<T> + Default> BinaryHeap<K, T, C> {
     /// Creates an empty `BinaryHeap`.
     ///
     /// This default version will create a max-heap.
@@ -483,7 +444,11 @@ impl<T: Ord> BinaryHeap<T> {
     // #[stable(feature = "rust1", since = "1.0.0")]
     #[must_use]
     pub fn new() -> Self {
-        BinaryHeap::from_vec(vec![])
+        BinaryHeap {
+            data: Vec::new(),
+            cmp: C::default(),
+            indices: HashMap::new(),
+        }
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -509,11 +474,15 @@ impl<T: Ord> BinaryHeap<T> {
     // #[stable(feature = "rust1", since = "1.0.0")]
     #[must_use]
     pub fn with_capacity(capacity: usize) -> Self {
-        BinaryHeap::from_vec(Vec::with_capacity(capacity))
+        BinaryHeap {
+            data: Vec::with_capacity(capacity),
+            cmp: C::default(),
+            indices: HashMap::with_capacity(capacity),
+        }
     }
 }
 
-impl<T: Ord> BinaryHeap<T, MinComparator> {
+impl<K, T: Ord> BinaryHeap<K, T, MinComparator> {
     /// Creates an empty `BinaryHeap`.
     ///
     /// The `_min()` version will create a min-heap.
@@ -532,7 +501,7 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// ```
     #[must_use]
     pub fn new_min() -> Self {
-        BinaryHeap::from_vec(vec![])
+        todo!("new_min")
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -556,12 +525,12 @@ impl<T: Ord> BinaryHeap<T, MinComparator> {
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     #[must_use]
-    pub fn with_capacity_min(capacity: usize) -> Self {
-        BinaryHeap::from_vec(Vec::with_capacity(capacity))
+    pub fn with_capacity_min(_capacity: usize) -> Self {
+        todo!("with_capacity_min")
     }
 }
 
-impl<T, F> BinaryHeap<T, FnComparator<F>>
+impl<K, T, F> BinaryHeap<K, T, FnComparator<F>>
 where
     F: Fn(&T, &T) -> Ordering,
 {
@@ -582,8 +551,8 @@ where
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     #[must_use]
-    pub fn new_by(f: F) -> Self {
-        BinaryHeap::from_vec_cmp(vec![], FnComparator(f))
+    pub fn new_by(_f: F) -> Self {
+        todo!("new_by")
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -607,14 +576,14 @@ where
     /// assert_eq!(heap.pop(), Some(1));
     /// ```
     #[must_use]
-    pub fn with_capacity_by(capacity: usize, f: F) -> Self {
-        BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), FnComparator(f))
+    pub fn with_capacity_by(_capacity: usize, _f: F) -> Self {
+        todo!("with_capacity_by")
     }
 }
 
-impl<T, F, K: Ord> BinaryHeap<T, KeyComparator<F>>
+impl<K, T, F, C: Ord> BinaryHeap<K, T, KeyComparator<F>>
 where
-    F: Fn(&T) -> K,
+    F: Fn(&T) -> C,
 {
     /// Creates an empty `BinaryHeap`.
     ///
@@ -633,8 +602,8 @@ where
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
     #[must_use]
-    pub fn new_by_key(f: F) -> Self {
-        BinaryHeap::from_vec_cmp(vec![], KeyComparator(f))
+    pub fn new_by_key(_f: F) -> Self {
+        todo!("new_by_key")
     }
 
     /// Creates an empty `BinaryHeap` with a specific capacity.
@@ -658,12 +627,12 @@ where
     /// assert_eq!(heap.pop(), Some(3));
     /// ```
     #[must_use]
-    pub fn with_capacity_by_key(capacity: usize, f: F) -> Self {
-        BinaryHeap::from_vec_cmp(Vec::with_capacity(capacity), KeyComparator(f))
+    pub fn with_capacity_by_key(_capacity: usize, _f: F) -> Self {
+        todo!("with_capacity_by_key")
     }
 }
 
-impl<T, C: Compare<T>> BinaryHeap<T, C> {
+impl<K, T, C: Compare<T>> BinaryHeap<K, T, C> {
     /// Replaces the comparator of binary heap.
     ///
     /// # Examples
@@ -744,7 +713,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     /// If the item is modified then the worst case time complexity is *O*(log(*n*)),
     /// otherwise it's *O*(1).
     // #[stable(feature = "binary_heap_peek_mut", since = "1.12.0")]
-    pub fn peek_mut(&mut self) -> Option<PeekMut<'_, T, C>> {
+    pub fn peek_mut(&mut self) -> Option<PeekMut<'_, K, T, C>> {
         if self.is_empty() {
             None
         } else {
@@ -1088,7 +1057,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
     }
 }
 
-impl<T, C> BinaryHeap<T, C> {
+impl<K, T, C> BinaryHeap<K, T, C> {
     /// Returns an iterator visiting all values in the underlying vector, in
     /// arbitrary order.
     ///
@@ -1126,7 +1095,7 @@ impl<T, C> BinaryHeap<T, C> {
     /// assert_eq!(heap.into_iter_sorted().take(2).collect::<Vec<_>>(), [5, 4]);
     /// ```
     // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
-    pub fn into_iter_sorted(self) -> IntoIterSorted<T, C> {
+    pub fn into_iter_sorted(self) -> IntoIterSorted<K, T, C> {
         IntoIterSorted { inner: self }
     }
 
@@ -1570,24 +1539,24 @@ impl<T> DoubleEndedIterator for IntoIter<T> {
     }
 }
 // #[stable(feature = "rust1", since = "1.0.0")]
-// impl<T> ExactSizeIterator for IntoIter<T> {
+// impl<K, T> ExactSizeIterator for IntoIter<T> {
 //     fn is_empty(&self) -> bool {
 //         self.iter.is_empty()
 //     }
 // }
 
 // #[stable(feature = "fused", since = "1.26.0")]
-// impl<T> FusedIterator for IntoIter<T> {}
+// impl<K, T> FusedIterator for IntoIter<T> {}
 
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
 #[derive(Clone, Debug)]
-pub struct IntoIterSorted<T, C> {
-    inner: BinaryHeap<T, C>,
+pub struct IntoIterSorted<K, T, C> {
+    inner: BinaryHeap<K, T, C>,
 }
 
 // #[unstable(feature = "binary_heap_into_iter_sorted", issue = "59278")]
-impl<T, C: Compare<T>> Iterator for IntoIterSorted<T, C> {
+impl<K, T, C: Compare<T>> Iterator for IntoIterSorted<K, T, C> {
     type Item = T;
 
     #[inline]
@@ -1645,50 +1614,52 @@ impl<T> DoubleEndedIterator for Drain<'_, T> {
 // #[stable(feature = "fused", since = "1.26.0")]
 // impl<'a, T: 'a> FusedIterator for Drain<'a, T> {}
 
-// #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
-impl<T: Ord> From<Vec<T>> for BinaryHeap<T> {
-    /// Converts a `Vec<T>` into a `BinaryHeap<T>`.
-    ///
-    /// This conversion happens in-place, and has *O*(*n*) time complexity.
-    fn from(vec: Vec<T>) -> Self {
-        BinaryHeap::from_vec(vec)
-    }
-}
+// TODO From implementations
+// // #[stable(feature = "binary_heap_extras_15", since = "1.5.0")]
+// impl<K, T: Ord> From<Vec<T>> for BinaryHeap<K, T> {
+//     /// Converts a `Vec<T>` into a `BinaryHeap<K, T>`.
+//     ///
+//     /// This conversion happens in-place, and has *O*(*n*) time complexity.
+//     fn from(vec: Vec<T>) -> Self {
+//         BinaryHeap::from_vec(vec)
+//     }
+// }
 
-impl<T: Ord, const N: usize> From<[T; N]> for BinaryHeap<T> {
-    /// ```
-    /// use binary_heap_plus::BinaryHeap;
-    ///
-    /// let mut h1 = BinaryHeap::from([1, 4, 2, 3]);
-    /// let mut h2: BinaryHeap<_> = [1, 4, 2, 3].into();
-    /// while let Some((a, b)) = h1.pop().zip(h2.pop()) {
-    ///     assert_eq!(a, b);
-    /// }
-    /// ```
-    fn from(arr: [T; N]) -> Self {
-        Self::from_iter(arr)
-    }
-}
+// impl<K, T: Ord, const N: usize> From<[T; N]> for BinaryHeap<K, T> {
+//     /// ```
+//     /// use binary_heap_plus::BinaryHeap;
+//     ///
+//     /// let mut h1 = BinaryHeap::from([1, 4, 2, 3]);
+//     /// let mut h2: BinaryHeap<_> = [1, 4, 2, 3].into();
+//     /// while let Some((a, b)) = h1.pop().zip(h2.pop()) {
+//     ///     assert_eq!(a, b);
+//     /// }
+//     /// ```
+//     fn from(arr: [T; N]) -> Self {
+//         Self::from_iter(arr)
+//     }
+// }
 
-impl<T, C> From<BinaryHeap<T, C>> for Vec<T> {
-    /// Converts a `BinaryHeap<T>` into a `Vec<T>`.
+impl<K, T, C> From<BinaryHeap<K, T, C>> for Vec<T> {
+    /// Converts a `BinaryHeap<K, T>` into a `Vec<T>`.
     ///
     /// This conversion requires no data movement or allocation, and has
     /// constant time complexity.
-    fn from(heap: BinaryHeap<T, C>) -> Vec<T> {
+    fn from(heap: BinaryHeap<K, T, C>) -> Vec<T> {
         heap.data
     }
 }
 
-// #[stable(feature = "rust1", since = "1.0.0")]
-impl<T: Ord> FromIterator<T> for BinaryHeap<T> {
-    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        BinaryHeap::from(iter.into_iter().collect::<Vec<_>>())
-    }
-}
+// TODO from iterator
+// // #[stable(feature = "rust1", since = "1.0.0")]
+// impl<K, T: Ord> FromIterator<T> for BinaryHeap<K, T> {
+//     fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+//         BinaryHeap::from(iter.into_iter().collect::<Vec<_>>())
+//     }
+// }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T, C> IntoIterator for BinaryHeap<T, C> {
+impl<K, T, C> IntoIterator for BinaryHeap<K, T, C> {
     type Item = T;
     type IntoIter = IntoIter<T>;
 
@@ -1718,7 +1689,7 @@ impl<T, C> IntoIterator for BinaryHeap<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<'a, T, C> IntoIterator for &'a BinaryHeap<T, C> {
+impl<'a, K, T, C> IntoIterator for &'a BinaryHeap<K, T, C> {
     type Item = &'a T;
     type IntoIter = Iter<'a, T>;
 
@@ -1728,7 +1699,7 @@ impl<'a, T, C> IntoIterator for &'a BinaryHeap<T, C> {
 }
 
 // #[stable(feature = "rust1", since = "1.0.0")]
-impl<T, C: Compare<T>> Extend<T> for BinaryHeap<T, C> {
+impl<K, T, C: Compare<T>> Extend<T> for BinaryHeap<K, T, C> {
     #[inline]
     fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         // <Self as SpecExtend<I>>::spec_extend(self, iter);
@@ -1736,19 +1707,19 @@ impl<T, C: Compare<T>> Extend<T> for BinaryHeap<T, C> {
     }
 }
 
-// impl<T, I: IntoIterator<Item = T>> SpecExtend<I> for BinaryHeap<T> {
+// impl<K, T, I: IntoIterator<Item = T>> SpecExtend<I> for BinaryHeap<K, T> {
 //     default fn spec_extend(&mut self, iter: I) {
 //         self.extend_desugared(iter.into_iter());
 //     }
 // }
 
-// impl<T> SpecExtend<BinaryHeap<T>> for BinaryHeap<T> {
-//     fn spec_extend(&mut self, ref mut other: BinaryHeap<T>) {
+// impl<K, T> SpecExtend<BinaryHeap<K, T>> for BinaryHeap<K, T> {
+//     fn spec_extend(&mut self, ref mut other: BinaryHeap<K, T>) {
 //         self.append(other);
 //     }
 // }
 
-impl<T, C: Compare<T>> BinaryHeap<T, C> {
+impl<K, T, C: Compare<T>> BinaryHeap<K, T, C> {
     fn extend_desugared<I: IntoIterator<Item = T>>(&mut self, iter: I) {
         let iterator = iter.into_iter();
         let (lower, _) = iterator.size_hint();
@@ -1760,7 +1731,7 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
 }
 
 // #[stable(feature = "extend_ref", since = "1.2.0")]
-impl<'a, T: 'a + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeap<T, C> {
+impl<'a, K, T: 'a + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeap<K, T, C> {
     fn extend<I: IntoIterator<Item = &'a T>>(&mut self, iter: I) {
         self.extend(iter.into_iter().cloned());
     }
@@ -1771,7 +1742,7 @@ impl<'a, T: 'a + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeap<T, C> {
 //            issue = "30172")]
 // pub struct BinaryHeapPlace<'a, T: 'a>
 // where T: Clone {
-//     heap: *mut BinaryHeap<T>,
+//     heap: *mut BinaryHeap<K, T>,
 //     place: vec::PlaceBack<'a, T>,
 // }
 
@@ -1789,12 +1760,12 @@ impl<'a, T: 'a + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeap<T, C> {
 // #[unstable(feature = "collection_placement",
 //            reason = "placement protocol is subject to change",
 //            issue = "30172")]
-// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeap<T>
+// impl<'a, T: 'a> Placer<T> for &'a mut BinaryHeap<K, T>
 // where T: Clone + Ord {
 //     type Place = BinaryHeapPlace<'a, T>;
 
 //     fn make_place(self) -> Self::Place {
-//         let ptr = self as *mut BinaryHeap<T>;
+//         let ptr = self as *mut BinaryHeap<K, T>;
 //         let place = Placer::make_place(self.data.place_back());
 //         BinaryHeapPlace {
 //             heap: ptr,
@@ -1823,7 +1794,7 @@ impl<'a, T: 'a + Copy, C: Compare<T>> Extend<&'a T> for BinaryHeap<T, C> {
 //     unsafe fn finalize(self) -> &'a T {
 //         self.place.finalize();
 
-//         let heap: &mut BinaryHeap<T> = &mut *self.heap;
+//         let heap: &mut BinaryHeap<K, T> = &mut *self.heap;
 //         let len = heap.len();
 //         let i = heap.sift_up(0, len - 1);
 //         heap.data.get_unchecked(i)
