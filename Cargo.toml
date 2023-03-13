@@ -1,10 +1,10 @@
 [package]
-name = "binary-heap-plus"
-version = "0.5.0"
-authors = ["SEKINE, Hideki <sekineh@me.com>"]
-description = "Enhanced version of std::collections::BinaryHeap that supports max, min, and custom-order heaps."
+name = "mut-binary-heap"
+version = "0.1.0"
+authors = ["Burkhard Mittelbach <burkhard@mittelbach-online.de>"]
+description = "Enhanced version of std::collections::BinaryHeap that supports increase and decrease key, max, min, and custom-order heaps and increas."
 license = "MIT"
-repository = "https://github.com/sekineh/binary-heap-plus-rs"
+repository = "https://github.com/Wasabi375/binary-heap-plus-rs" # TODO change path
 readme = "README.md"
 keywords = ["binary", "heap", "priority", "queue"]
 categories = ["data-structures", "algorithms", ]
@@ -18,7 +18,3 @@ serde = { version = "1.0.116", optional = true, features = ["derive"] }
 [dev-dependencies]
 serde_json = "1.0.57"
 rand = "0.8"
-
-[badges]
-# TODO: waiting for PR to land...: https://github.com/rust-lang/crates.io/pull/1838#
-# github-actions = { repository = "sekineh/binary-heap-plus-rs", workflow = "Rust" }
