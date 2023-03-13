@@ -1,12 +1,15 @@
 #![feature(test)]
 
+/*
 extern crate test;
 
-use binary_heap_plus::BinaryHeap;
+use mut_binary_heap::BinaryHeap;
 
 use rand::{seq::SliceRandom, thread_rng};
 use test::{black_box, Bencher};
 
+
+// TODO reneable benchmarks
 #[bench]
 fn bench_find_smallest_1000(b: &mut Bencher) {
     let mut rng = thread_rng();
@@ -93,3 +96,4 @@ fn bench_pop(b: &mut Bencher) {
         }
     })
 }
+*/
