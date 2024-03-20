@@ -422,6 +422,17 @@ impl<T: fmt::Debug, C> fmt::Debug for BinaryHeap<T, C> {
     }
 }
 
+struct RebuildOnDrop<'a, T, C: Compare<T>> {
+    heap: &'a mut BinaryHeap<T, C>,
+    rebuild_from: usize,
+}
+
+impl<T, C: Compare<T>> Drop for RebuildOnDrop<'_, T, C> {
+    fn drop(&mut self) {
+        self.heap.rebuild_tail(self.rebuild_from);
+    }
+}
+
 impl<T, C: Compare<T> + Default> BinaryHeap<T, C> {
     /// Generic constructor for `BinaryHeap` from [`Vec`].
     ///
@@ -1085,6 +1096,29 @@ impl<T, C: Compare<T>> BinaryHeap<T, C> {
         self.data.append(&mut other.data);
 
         self.rebuild_tail(start);
+    }
+
+    // #[stable(feature = "binary_heap_retain", since = "1.70.0")]
+    pub fn retain<F>(&mut self, mut f: F)
+    where
+        F: FnMut(&T) -> bool,
+    {
+        // rebuild_start will be updated to the first touched element below, and the rebuild will
+        // only be done for the tail.
+        let mut guard = RebuildOnDrop {
+            rebuild_from: self.len(),
+            heap: self,
+        };
+        let mut i = 0;
+
+        guard.heap.data.retain(|e| {
+            let keep = f(e);
+            if !keep && i < guard.rebuild_from {
+                guard.rebuild_from = i;
+            }
+            i += 1;
+            keep
+        });
     }
 }
 
