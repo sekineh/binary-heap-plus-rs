@@ -150,20 +150,20 @@
 
 // use core::ops::{Deref, DerefMut, Place, Placer, InPlace};
 // use core::iter::{FromIterator, FusedIterator};
-use std::cmp::Ordering;
-use std::iter::FromIterator;
-use std::slice;
+use core::cmp::Ordering;
+use core::iter::FromIterator;
+use core::slice;
 // use std::iter::FusedIterator;
 // use std::vec::Drain;
+use alloc::{vec, vec::Vec};
 use compare::Compare;
 use core::fmt;
 use core::mem::{swap, ManuallyDrop};
+use core::ops::Deref;
+use core::ops::DerefMut;
 use core::ptr;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use std::ops::Deref;
-use std::ops::DerefMut;
-use std::vec;
 
 // use slice;
 // use vec::{self, Vec};
