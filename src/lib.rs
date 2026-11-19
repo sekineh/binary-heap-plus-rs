@@ -111,6 +111,10 @@
 //! [`BinaryHeap::new_by()`]: struct.BinaryHeap.html#method.new_by
 //! [`BinaryHeap::new_by_key()`]: struct.BinaryHeap.html#method.new_by_key
 
+#![no_std]
+
+extern crate alloc;
+
 mod binary_heap;
 pub use crate::binary_heap::*;
 
@@ -124,6 +128,9 @@ pub use crate::binary_heap::*;
 #[cfg(test)]
 mod from_liballoc {
     // The following tests copyed from liballoc/tests/binary_heap.rs
+    extern crate std;
+
+    use alloc::{vec, vec::Vec};
 
     use super::binary_heap::*;
     // use std::panic;
